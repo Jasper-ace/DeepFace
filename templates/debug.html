@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug - Face Recognition{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4><i class="fas fa-bug"></i> Face Recognition Debug</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Settings:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Liveness Detection:</strong> 
+                                <span class="badge bg-{{ settings.LIVENESS_DETECTION|yesno:'danger,success' }}">
+                                    {{ settings.LIVENESS_DETECTION|yesno:'Enabled,Disabled' }}
+                                </span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Confidence Threshold:</strong> 
+                                <span class="badge bg-info">{{ settings.FACE_CONFIDENCE_THRESHOLD }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Capture Frames:</strong> 
+                                <span class="badge bg-secondary">{{ settings.FACE_CAPTURE_FRAMES }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Registered Users:</h6>
+                        <div class="list-group">
+                            {% for user in users %}
+                            <div class="list-group-item">
+                                <strong>{{ user.username }}</strong><br>
+                                <small class="text-muted">{{ user.email }}</small><br>
+                                <small class="text-muted">Created: {{ user.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-muted">
+                                No users registered yet
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <h6>Quick Actions:</h6>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'register' %}" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> Register New User
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Test Login
+                        </a>
+                        <button class="btn btn-warning" onclick="testCamera()">
+                            <i class="fas fa-camera"></i> Test Camera
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="cameraTest" style="display: none;" class="mt-4">
+                    <div class="text-center">
+                        <h6>Camera Test</h6>
+                        <div class="face-circle">
+                            <video id="testVideo" width="300" height="300" autoplay muted></video>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="stopCamera()">Stop Camera</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let testStream;
+
+async function testCamera() {
+    try {
+        testStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 300, height: 300 } 
+        });
+        const video = document.getElementById('testVideo');
+        video.srcObject = testStream;
+        document.getElementById('cameraTest').style.display = 'block';
+        console.log('Camera test successful');
+    } catch (err) {
+        console.error('Camera test failed:', err);
+        alert('Camera test failed: ' + err.message);
+    }
+}
+
+function stopCamera() {
+    if (testStream) {
+        testStream.getTracks().forEach(track => track.stop());
+        document.getElementById('cameraTest').style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

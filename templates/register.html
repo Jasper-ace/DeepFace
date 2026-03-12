@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Face Recognition Auth{% endblock %}
+
+{% block content %}
+<div class="face-id-container">
+    <!-- Initial Form -->
+    <div id="initialForm" class="text-center">
+        <h2 class="instruction-text">Set Up Face ID</h2>
+        <p class="status-text">Enter your details to get started</p>
+        
+        <div class="card" style="max-width: 400px;">
+            <div class="card-body p-4">
+                <form id="registrationForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required 
+                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required
+                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                    </div>
+                    
+                    <button type="button" id="startRegistration" class="btn btn-faceid w-100">
+                        <i class="fas fa-user-plus"></i> Continue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Face ID Setup -->
+    <div id="faceIdSetup" style="display: none;">
+        <h2 class="instruction-text">Position your face in the frame</h2>
+        <p class="status-text" id="statusText">Move your head slowly to complete the circle</p>
+        
+        <div class="face-circle">
+            <video id="video" autoplay muted playsinline></video>
+            <div class="face-overlay"></div>
+            
+            <!-- Centering Guide -->
+            <div class="centering-guide" id="centeringGuide"></div>
+            
+            <!-- Crosshair -->
+            <div class="crosshair" id="crosshair">
+                <div class="crosshair-line crosshair-vertical"></div>
+                <div class="crosshair-line crosshair-horizontal"></div>
+            </div>
+            
+            <!-- Face Detection Grid -->
+            <div class="face-detection-grid" id="detectionGrid">
+                <div class="grid-line grid-horizontal" style="top: 25%;"></div>
+                <div class="grid-line grid-horizontal" style="top: 50%;"></div>
+                <div class="grid-line grid-horizontal" style="top: 75%;"></div>
+                <div class="grid-line grid-vertical" style="left: 25%;"></div>
+                <div class="grid-line grid-vertical" style="left: 50%;"></div>
+                <div class="grid-line grid-vertical" style="left: 75%;"></div>
+                <div class="scanning-beam"></div>
+            </div>
+            
+            <!-- Face Detection Points -->
+            <div class="face-points" id="facePoints">
+                <div class="face-point" style="top: 25%; left: 35%;"></div>
+                <div class="face-point" style="top: 25%; left: 65%;"></div>
+                <div class="face-point" style="top: 40%; left: 50%;"></div>
+                <div class="face-point" style="top: 55%; left: 30%;"></div>
+                <div class="face-point" style="top: 55%; left: 70%;"></div>
+                <div class="face-point" style="top: 70%; left: 50%;"></div>
+                <div class="face-point" style="top: 60%; left: 45%;"></div>
+                <div class="face-point" style="top: 60%; left: 55%;"></div>
+            </div>
+            
+            <!-- Progress Ring -->
+            <svg class="progress-ring">
+                <circle cx="155" cy="155" r="150" id="progressCircle"></circle>
+            </svg>
+            
+            <!-- Scanning Ring -->
+            <svg class="scanning-ring" id="scanningRing">
+                <circle cx="160" cy="160" r="155"></circle>
+            </svg>
+            
+            <!-- Multi-angle Progress -->
+            <div class="angle-progress" id="angleProgress"></div>
+            
+            <!-- Blink Detection -->
+            <div class="blink-indicator" id="blinkIndicator">Blink detected ✓</div>
+            
+            <!-- Success Animation -->
+            <div class="success-animation" id="successAnimation">
+                <div class="checkmark"></div>
+            </div>
+            
+            <!-- Failure Animation -->
+            <div class="failure-animation" id="failureAnimation">
+                <div class="failure-mark"></div>
+            </div>
+        </div>
+        
+        <div class="progress-text" id="progressText">0% Complete</div>
+        
+        <div class="text-center mt-4">
+            <button type="button" id="startCapture" class="btn btn-faceid">
+                <i class="fas fa-play"></i> Start Scan
+            </button>
+            <button type="button" id="stopCapture" class="btn btn-secondary" style="display: none;">
+                <i class="fas fa-stop"></i> Stop
+            </button>
+            <button type="button" id="flipCamera" class="btn btn-secondary">
+                <i class="fas fa-sync-alt"></i> Flip
+            </button>
+        </div>
+    </div>
+    
+    <!-- Processing -->
+    <div id="processingSection" style="display: none;">
+        <h2 class="instruction-text">Processing Face Data</h2>
+        <div class="text-center">
+            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Processing...</span>
+            </div>
+            <p class="status-text mt-3">Creating your Face ID profile...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class AppleFaceIDRegistration {
+    constructor() {
+        this.video = null;
+        this.stream = null;
+        this.capturedFrames = [];
+        this.isCapturing = false;
+        this.captureCount = 0;
+        this.maxFrames = 30;
+        this.cameraFlipped = true;
+        this.angleSegments = [];
+        this.capturedAngles = {
+            center: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false
+        };
+        this.blinkDetected = false;
+        this.lastBlinkTime = 0;
+        
+        this.init();
+    }
+    
+    init() {
+        document.getElementById('startRegistration').addEventListener('click', () => this.showFaceIdSetup());
+        document.getElementById('startCapture').addEventListener('click', () => this.startCapture());
+        document.getElementById('stopCapture').addEventListener('click', () => this.stopCapture());
+        document.getElementById('flipCamera').addEventListener('click', () => this.flipCamera());
+    }
+    
+    async showFaceIdSetup() {
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        
+        if (!username || !email) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        document.getElementById('initialForm').style.display = 'none';
+        document.getElementById('faceIdSetup').style.display = 'block';
+        
+        this.createAngleSegments();
+        await this.startCamera();
+    }
+    
+    createAngleSegments() {
+        const container = document.getElementById('angleProgress');
+        container.innerHTML = '';
+        this.angleSegments = [];
+        
+        const totalSegments = 40;
+        const radius = 165;
+        
+        for (let i = 0; i < totalSegments; i++) {
+            const segment = document.createElement('div');
+            segment.className = 'angle-segment';
+            const angle = (i * 360) / totalSegments;
+            const x = Math.cos((angle - 90) * Math.PI / 180) * radius;
+            const y = Math.sin((angle - 90) * Math.PI / 180) * radius;
+            
+            segment.style.left = `${x + radius}px`;
+            segment.style.top = `${y + radius}px`;
+            
+            container.appendChild(segment);
+            this.angleSegments.push(segment);
+        }
+    }
+    
+    async startCamera() {
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: 640, 
+                    height: 640,
+                    facingMode: 'user'
+                } 
+            });
+            
+            this.video = document.getElementById('video');
+            this.video.srcObject = this.stream;
+            
+            // Show centering guide initially
+            document.getElementById('centeringGuide').classList.add('active');
+            
+            // Start face detection
+            this.video.addEventListener('loadedmetadata', () => {
+                this.startFaceDetection();
+            });
+            
+        } catch (err) {
+            alert('Camera access denied. Please allow camera access and try again.');
+        }
+    }
+    
+    startFaceDetection() {
+        // Simulate face detection and show UI elements
+        setTimeout(() => {
+            document.getElementById('centeringGuide').classList.remove('active');
+            document.getElementById('crosshair').classList.add('active');
+            document.getElementById('detectionGrid').classList.add('active');
+            document.getElementById('facePoints').classList.add('active');
+            document.getElementById('statusText').textContent = 'Face detected - Ready to scan';
+        }, 1000);
+    }
+    
+    flipCamera() {
+        this.cameraFlipped = !this.cameraFlipped;
+        if (this.cameraFlipped) {
+            this.video.style.transform = 'scaleX(-1)';
+        } else {
+            this.video.style.transform = 'scaleX(1)';
+        }
+    }
+    
+    startCapture() {
+        this.isCapturing = true;
+        this.capturedFrames = [];
+        this.captureCount = 0;
+        
+        document.getElementById('startCapture').style.display = 'none';
+        document.getElementById('stopCapture').style.display = 'inline-block';
+        document.getElementById('statusText').textContent = 'Scanning...';
+        document.getElementById('scanningRing').classList.add('active');
+        
+        this.captureInterval = setInterval(() => {
+            if (this.captureCount >= this.maxFrames || !this.isCapturing) {
+                clearInterval(this.captureInterval);
+                if (this.isCapturing) {
+                    this.finishCapture();
+                }
+                return;
+            }
+            
+            this.captureFrame();
+            this.captureCount++;
+            
+            const progress = (this.captureCount / this.maxFrames) * 100;
+            this.updateProgress(progress);
+            this.updateAngleCapture(progress);
+            this.simulateBlinkDetection();
+            
+        }, 200);
+    }
+    
+    stopCapture() {
+        this.isCapturing = false;
+        clearInterval(this.captureInterval);
+        
+        document.getElementById('startCapture').style.display = 'inline-block';
+        document.getElementById('stopCapture').style.display = 'none';
+        document.getElementById('statusText').textContent = 'Scan stopped - Click Start Scan to try again';
+        document.getElementById('scanningRing').classList.remove('active');
+        
+        // Reset progress
+        this.resetProgress();
+    }
+    
+    updateProgress(progress) {
+        const circle = document.getElementById('progressCircle');
+        const circumference = 2 * Math.PI * 150;
+        const offset = circumference - (progress / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        
+        document.getElementById('progressText').textContent = `${Math.round(progress)}% Complete`;
+        
+        // Update status text based on progress
+        if (progress < 20) {
+            document.getElementById('statusText').textContent = 'Move your head slowly to the right';
+        } else if (progress < 40) {
+            document.getElementById('statusText').textContent = 'Continue moving around the circle';
+        } else if (progress < 60) {
+            document.getElementById('statusText').textContent = 'Turn your head up slightly';
+        } else if (progress < 80) {
+            document.getElementById('statusText').textContent = 'Almost complete, keep moving';
+        } else {
+            document.getElementById('statusText').textContent = 'Finalizing scan...';
+        }
+    }
+    
+    updateAngleCapture(progress) {
+        const activeSegments = Math.floor((progress / 100) * this.angleSegments.length);
+        
+        for (let i = 0; i < activeSegments; i++) {
+            if (!this.angleSegments[i].classList.contains('captured')) {
+                this.angleSegments[i].classList.add('captured');
+            }
+        }
+        
+        // Simulate angle detection
+        if (progress > 20 && !this.capturedAngles.right) {
+            this.capturedAngles.right = true;
+        }
+        if (progress > 40 && !this.capturedAngles.up) {
+            this.capturedAngles.up = true;
+        }
+        if (progress > 60 && !this.capturedAngles.left) {
+            this.capturedAngles.left = true;
+        }
+        if (progress > 80 && !this.capturedAngles.down) {
+            this.capturedAngles.down = true;
+        }
+        if (progress > 90 && !this.capturedAngles.center) {
+            this.capturedAngles.center = true;
+        }
+    }
+    
+    simulateBlinkDetection() {
+        // Simulate blink detection every few seconds
+        const now = Date.now();
+        if (now - this.lastBlinkTime > 3000) {
+            this.blinkDetected = true;
+            this.lastBlinkTime = now;
+            
+            const indicator = document.getElementById('blinkIndicator');
+            indicator.classList.add('active');
+            setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 1500);
+        }
+    }
+    
+    resetProgress() {
+        const circle = document.getElementById('progressCircle');
+        circle.style.strokeDashoffset = 974;
+        document.getElementById('progressText').textContent = '0% Complete';
+        
+        this.angleSegments.forEach(segment => {
+            segment.classList.remove('captured');
+        });
+        
+        this.capturedAngles = {
+            center: false,
+            left: false,
+            right: false,
+            up: false,
+            down: false
+        };
+    }
+    
+    captureFrame() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+        
+        if (this.cameraFlipped) {
+            ctx.scale(-1, 1);
+            ctx.drawImage(this.video, -640, 0, 640, 640);
+        } else {
+            ctx.drawImage(this.video, 0, 0, 640, 640);
+        }
+        
+        const frameData = canvas.toDataURL('image/jpeg', 0.8);
+        this.capturedFrames.push(frameData);
+    }
+    
+    async finishCapture() {
+        this.isCapturing = false;
+        
+        // Show success animation
+        document.getElementById('successAnimation').classList.add('active');
+        document.getElementById('statusText').textContent = 'Scan Complete!';
+        
+        setTimeout(async () => {
+            document.getElementById('faceIdSetup').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
+            
+            // Stop camera
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => track.stop());
+            }
+            
+            await this.processRegistration();
+        }, 2000);
+    }
+    
+    async processRegistration() {
+        try {
+            const response = await fetch('/api/register-face/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': djangoData.csrfToken
+                },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    email: document.getElementById('email').value,
+                    frames: this.capturedFrames,
+                    angles_captured: this.capturedAngles,
+                    blink_detected: this.blinkDetected
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                setTimeout(() => {
+                    alert('Face ID setup complete! You can now sign in with your face.');
+                    window.location.href = '/login/';
+                }, 1500);
+            } else {
+                this.showFailure(result.message);
+            }
+        } catch (error) {
+            this.showFailure('Registration failed. Please try again.');
+        }
+    }
+    
+    showFailure(message) {
+        document.getElementById('processingSection').style.display = 'none';
+        document.getElementById('faceIdSetup').style.display = 'block';
+        
+        document.getElementById('failureAnimation').classList.add('active');
+        document.getElementById('statusText').textContent = 'Registration Failed';
+        
+        setTimeout(() => {
+            alert(message);
+            location.reload();
+        }, 2000);
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    new AppleFaceIDRegistration();
+});
+</script>
+{% endblock %}

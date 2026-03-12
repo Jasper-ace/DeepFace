@@ -1,0 +1,35 @@
+# Git Setup Commands for Face Recognition Authentication System
+# Run these commands in your project directory (DeepFace folder)
+
+# 1. Initialize Git repository (if not already done)
+git init
+
+# 2. Add all files to staging
+git add .
+
+# 3. Create initial commit
+git commit -m "Initial commit: Face Recognition Authentication System with Apple Face ID interface"
+
+# 4. Set main branch
+git branch -M main
+
+# 5. Add remote repository
+git remote add origin https://github.com/Jasper-ace/DeepFace.git
+
+# 6. Push to GitHub
+git push -u origin main
+
+# Alternative commands if you encounter issues:
+
+# If repository already exists on GitHub and you want to force push:
+# git push -f origin main
+
+# If you need to pull first (if repository has existing content):
+# git pull origin main --allow-unrelated-histories
+# git push origin main
+
+# To check status at any time:
+# git status
+
+# To see commit history:
+# git log --oneline

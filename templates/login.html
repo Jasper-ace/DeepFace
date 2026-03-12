@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Face Recognition Auth{% endblock %}
+
+{% block content %}
+<div class="face-id-container">
+    <!-- Face ID Authentication -->
+    <div id="faceIdAuth">
+        <h2 class="instruction-text">Sign in with Face ID</h2>
+        <p class="status-text" id="statusText">Position your face in the frame</p>
+        
+        <div class="face-circle">
+            <video id="video" autoplay muted playsinline></video>
+            <div class="face-overlay"></div>
+            
+            <!-- Centering Guide -->
+            <div class="centering-guide" id="centeringGuide"></div>
+            
+            <!-- Crosshair -->
+            <div class="crosshair" id="crosshair">
+                <div class="crosshair-line crosshair-vertical"></div>
+                <div class="crosshair-line crosshair-horizontal"></div>
+            </div>
+            
+            <!-- Face Detection Grid -->
+            <div class="face-detection-grid" id="detectionGrid">
+                <div class="grid-line grid-horizontal" style="top: 25%;"></div>
+                <div class="grid-line grid-horizontal" style="top: 50%;"></div>
+                <div class="grid-line grid-horizontal" style="top: 75%;"></div>
+                <div class="grid-line grid-vertical" style="left: 25%;"></div>
+                <div class="grid-line grid-vertical" style="left: 50%;"></div>
+                <div class="grid-line grid-vertical" style="left: 75%;"></div>
+                <div class="scanning-beam"></div>
+            </div>
+            
+            <!-- Face Detection Points -->
+            <div class="face-points" id="facePoints">
+                <div class="face-point" style="top: 25%; left: 35%;"></div>
+                <div class="face-point" style="top: 25%; left: 65%;"></div>
+                <div class="face-point" style="top: 40%; left: 50%;"></div>
+                <div class="face-point" style="top: 55%; left: 30%;"></div>
+                <div class="face-point" style="top: 55%; left: 70%;"></div>
+                <div class="face-point" style="top: 70%; left: 50%;"></div>
+                <div class="face-point" style="top: 60%; left: 45%;"></div>
+                <div class="face-point" style="top: 60%; left: 55%;"></div>
+            </div>
+            
+            <!-- Progress Ring -->
+            <svg class="progress-ring">
+                <circle cx="155" cy="155" r="150" id="progressCircle"></circle>
+            </svg>
+            
+            <!-- Scanning Ring -->
+            <svg class="scanning-ring" id="scanningRing">
+                <circle cx="160" cy="160" r="155"></circle>
+            </svg>
+            
+            <!-- Blink Detection -->
+            <div class="blink-indicator" id="blinkIndicator">Blink detected ✓</div>
+            
+            <!-- Success Animation -->
+            <div class="success-animation" id="successAnimation">
+                <div class="checkmark"></div>
+            </div>
+            
+            <!-- Failure Animation -->
+            <div class="failure-animation" id="failureAnimation">
+                <div class="failure-mark"></div>
+            </div>
+        </div>
+        
+        <div class="progress-text" id="progressText">Authenticating...</div>
+        
+        <div class="text-center mt-4">
+            <button type="button" id="startAuth" class="btn btn-faceid">
+                <i class="fas fa-user-check"></i> Start Authentication
+            </button>
+            <button type="button" id="flipCamera" class="btn btn-secondary">
+                <i class="fas fa-sync-alt"></i> Flip
+            </button>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                Don't have an account? 
+                <a href="{% url 'register' %}" class="text-decoration-none" style="color: #00ff88;">Set up Face ID</a>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Processing -->
+    <div id="processingSection" style="display: none;">
+        <h2 class="instruction-text">Verifying Identity</h2>
+        <div class="text-center">
+            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Authenticating...</span>
+            </div>
+            <p class="status-text mt-3">Comparing face data...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class AppleFaceIDAuthentication {
+    constructor() {
+        this.video = null;
+        this.stream = null;
+        this.capturedFrames = [];
+        this.isCapturing = false;
+        this.captureCount = 0;
+        this.maxFrames = 15; // Fewer frames for authentication
+        this.cameraFlipped = true;
+        this.blinkDetected = false;
+        this.lastBlinkTime = 0;
+        this.authStarted = false;
+        
+        this.init();
+    }
+    
+    init() {
+        document.getElementById('startAuth').addEventListener('click', () => this.startAuthentication());
+        document.getElementById('flipCamera').addEventListener('click', () => this.flipCamera());
+        
+        // Auto-start camera when page loads
+        this.startCamera();
+    }
+    
+    async startCamera() {
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: 640, 
+                    height: 640,
+                    facingMode: 'user'
+                } 
+            });
+            
+            this.video = document.getElementById('video');
+            this.video.srcObject = this.stream;
+            
+            // Show centering guide initially
+            document.getElementById('centeringGuide').classList.add('active');
+            
+            // Start face detection
+            this.video.addEventListener('loadedmetadata', () => {
+                this.startFaceDetection();
+            });
+            
+        } catch (err) {
+            alert('Camera access denied. Please allow camera access and try again.');
+        }
+    }
+    
+    startFaceDetection() {
+        // Simulate face detection and show UI elements
+        setTimeout(() => {
+            document.getElementById('centeringGuide').classList.remove('active');
+            document.getElementById('crosshair').classList.add('active');
+            document.getElementById('detectionGrid').classList.add('active');
+            document.getElementById('facePoints').classList.add('active');
+            document.getElementById('statusText').textContent = 'Face detected - Ready to authenticate';
+        }, 1000);
+    }
+    
+    flipCamera() {
+        this.cameraFlipped = !this.cameraFlipped;
+        if (this.cameraFlipped) {
+            this.video.style.transform = 'scaleX(-1)';
+        } else {
+            this.video.style.transform = 'scaleX(1)';
+        }
+    }
+    
+    startAuthentication() {
+        if (this.authStarted) return;
+        
+        this.authStarted = true;
+        this.isCapturing = true;
+        this.capturedFrames = [];
+        this.captureCount = 0;
+        
+        document.getElementById('startAuth').style.display = 'none';
+        document.getElementById('statusText').textContent = 'Authenticating...';
+        document.getElementById('scanningRing').classList.add('active');
+        
+        this.captureInterval = setInterval(() => {
+            if (this.captureCount >= this.maxFrames || !this.isCapturing) {
+                clearInterval(this.captureInterval);
+                if (this.isCapturing) {
+                    this.finishAuthentication();
+                }
+                return;
+            }
+            
+            this.captureFrame();
+            this.captureCount++;
+            
+            const progress = (this.captureCount / this.maxFrames) * 100;
+            this.updateProgress(progress);
+            this.simulateBlinkDetection();
+            
+        }, 300); // Slightly slower for authentication
+    }
+    
+    updateProgress(progress) {
+        const circle = document.getElementById('progressCircle');
+        const circumference = 2 * Math.PI * 150;
+        const offset = circumference - (progress / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        
+        document.getElementById('progressText').textContent = `Verifying... ${Math.round(progress)}%`;
+        
+        // Update status text
+        if (progress < 30) {
+            document.getElementById('statusText').textContent = 'Analyzing facial features...';
+        } else if (progress < 60) {
+            document.getElementById('statusText').textContent = 'Comparing with stored data...';
+        } else if (progress < 90) {
+            document.getElementById('statusText').textContent = 'Verifying identity...';
+        } else {
+            document.getElementById('statusText').textContent = 'Almost complete...';
+        }
+    }
+    
+    simulateBlinkDetection() {
+        // Simulate blink detection
+        const now = Date.now();
+        if (now - this.lastBlinkTime > 2000) {
+            this.blinkDetected = true;
+            this.lastBlinkTime = now;
+            
+            const indicator = document.getElementById('blinkIndicator');
+            indicator.classList.add('active');
+            setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 1000);
+        }
+    }
+    
+    captureFrame() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+        
+        if (this.cameraFlipped) {
+            ctx.scale(-1, 1);
+            ctx.drawImage(this.video, -640, 0, 640, 640);
+        } else {
+            ctx.drawImage(this.video, 0, 0, 640, 640);
+        }
+        
+        const frameData = canvas.toDataURL('image/jpeg', 0.8);
+        this.capturedFrames.push(frameData);
+    }
+    
+    async finishAuthentication() {
+        this.isCapturing = false;
+        
+        document.getElementById('faceIdAuth').style.display = 'none';
+        document.getElementById('processingSection').style.display = 'block';
+        
+        // Stop camera
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+        }
+        
+        await this.processAuthentication();
+    }
+    
+    async processAuthentication() {
+        try {
+            const response = await fetch('/api/authenticate-face/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': djangoData.csrfToken
+                },
+                body: JSON.stringify({
+                    frames: this.capturedFrames,
+                    blink_detected: this.blinkDetected
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result);
+            } else {
+                this.showFailure(result);
+            }
+        } catch (error) {
+            this.showFailure({ message: 'Authentication failed. Please try again.' });
+        }
+    }
+    
+    showSuccess(result) {
+        document.getElementById('processingSection').style.display = 'none';
+        document.getElementById('faceIdAuth').style.display = 'block';
+        
+        // Show success animation
+        document.getElementById('successAnimation').classList.add('active');
+        document.getElementById('statusText').textContent = 'Authentication Successful!';
+        document.getElementById('progressText').textContent = `Welcome ${result.username}!`;
+        
+        // Fill progress ring completely
+        const circle = document.getElementById('progressCircle');
+        circle.style.strokeDashoffset = 0;
+        
+        setTimeout(() => {
+            window.location.href = '/dashboard/';
+        }, 2500);
+    }
+    
+    showFailure(result) {
+        document.getElementById('processingSection').style.display = 'none';
+        document.getElementById('faceIdAuth').style.display = 'block';
+        
+        // Show failure animation
+        document.getElementById('failureAnimation').classList.add('active');
+        document.getElementById('statusText').textContent = 'Authentication Failed';
+        document.getElementById('progressText').textContent = result.message || 'Face not recognized';
+        
+        // Reset progress ring with red color
+        const circle = document.getElementById('progressCircle');
+        circle.style.stroke = '#ff3b30';
+        circle.style.strokeDashoffset = 974;
+        
+        setTimeout(() => {
+            // Reset and allow retry
+            document.getElementById('failureAnimation').classList.remove('active');
+            document.getElementById('startAuth').style.display = 'inline-block';
+            document.getElementById('statusText').textContent = 'Face detected - Ready to authenticate';
+            document.getElementById('progressText').textContent = 'Authenticating...';
+            
+            // Reset progress ring color
+            circle.style.stroke = '#00ff88';
+            
+            this.authStarted = false;
+            
+            // Restart camera if needed
+            if (!this.stream || this.stream.getTracks().every(track => track.readyState === 'ended')) {
+                this.startCamera();
+            }
+        }, 3000);
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    new AppleFaceIDAuthentication();
+});
+</script>
+{% endblock %}
