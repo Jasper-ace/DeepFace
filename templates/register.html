@@ -6,25 +6,59 @@
 <div class="face-id-container">
     <!-- Initial Form -->
     <div id="initialForm" class="text-center">
-        <h2 class="instruction-text">Set Up Face ID</h2>
-        <p class="status-text">Enter your details to get started</p>
+        <div class="welcome-header">
+            <div class="face-id-icon">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <h1 class="welcome-title">Welcome to Face ID</h1>
+            <p class="welcome-subtitle">Set up secure face authentication in seconds</p>
+        </div>
         
-        <div class="card" style="max-width: 400px;">
-            <div class="card-body p-4">
+        <div class="registration-card">
+            <div class="card-header">
+                <h3 class="card-title">Create Your Account</h3>
+                <p class="card-subtitle">Enter your details to get started</p>
+            </div>
+            
+            <div class="card-body">
                 <form id="registrationForm">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" required 
-                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user"></i> Username
+                        </label>
+                        <input type="text" class="form-control modern-input" id="username" required 
+                               placeholder="Enter your username">
+                        <div class="input-feedback" id="usernameFeedback"></div>
                     </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" required
-                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+                    
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i> Email Address
+                        </label>
+                        <input type="email" class="form-control modern-input" id="email" required
+                               placeholder="Enter your email address">
+                        <div class="input-feedback" id="emailFeedback"></div>
+                    </div>
+                    
+                    <div class="security-features">
+                        <div class="feature-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Secure biometric authentication</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-lock"></i>
+                            <span>Your face data stays on device</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-bolt"></i>
+                            <span>Lightning fast login</span>
+                        </div>
                     </div>
                     
                     <button type="button" id="startRegistration" class="btn btn-faceid w-100">
-                        <i class="fas fa-user-plus"></i> Continue
+                        <i class="fas fa-camera"></i> 
+                        <span>Set Up Face ID</span>
+                        <i class="fas fa-arrow-right"></i>
                     </button>
                 </form>
             </div>
@@ -33,95 +67,147 @@
     
     <!-- Face ID Setup -->
     <div id="faceIdSetup" style="display: none;">
-        <h2 class="instruction-text">Position your face in the frame</h2>
-        <p class="status-text" id="statusText">Move your head slowly to complete the circle</p>
+        <div class="scan-header">
+            <div class="scan-icon">
+                <i class="fas fa-scan"></i>
+            </div>
+            <h2 class="scan-title">Face ID Setup</h2>
+            <p class="scan-subtitle" id="statusText">Position your face in the center and follow the guide</p>
+        </div>
         
-        <div class="face-circle">
-            <video id="video" autoplay muted playsinline></video>
-            <div class="face-overlay"></div>
-            
-            <!-- Centering Guide -->
-            <div class="centering-guide" id="centeringGuide"></div>
-            
-            <!-- Crosshair -->
-            <div class="crosshair" id="crosshair">
-                <div class="crosshair-line crosshair-vertical"></div>
-                <div class="crosshair-line crosshair-horizontal"></div>
+        <div class="face-scan-container">
+            <div class="face-circle">
+                <video id="video" autoplay muted playsinline></video>
+                <div class="face-overlay"></div>
+                
+                <!-- Centering Guide -->
+                <div class="centering-guide" id="centeringGuide">
+                    <div class="guide-text">Center your face</div>
+                </div>
+                
+                <!-- Crosshair -->
+                <div class="crosshair" id="crosshair">
+                    <div class="crosshair-line crosshair-vertical"></div>
+                    <div class="crosshair-line crosshair-horizontal"></div>
+                </div>
+                
+                <!-- Face Detection Grid -->
+                <div class="face-detection-grid" id="detectionGrid">
+                    <div class="grid-line grid-horizontal" style="top: 25%;"></div>
+                    <div class="grid-line grid-horizontal" style="top: 50%;"></div>
+                    <div class="grid-line grid-horizontal" style="top: 75%;"></div>
+                    <div class="grid-line grid-vertical" style="left: 25%;"></div>
+                    <div class="grid-line grid-vertical" style="left: 50%;"></div>
+                    <div class="grid-line grid-vertical" style="left: 75%;"></div>
+                    <div class="scanning-beam"></div>
+                </div>
+                
+                <!-- Face Detection Points -->
+                <div class="face-points" id="facePoints">
+                    <div class="face-point" style="top: 25%; left: 35%;"></div>
+                    <div class="face-point" style="top: 25%; left: 65%;"></div>
+                    <div class="face-point" style="top: 40%; left: 50%;"></div>
+                    <div class="face-point" style="top: 55%; left: 30%;"></div>
+                    <div class="face-point" style="top: 55%; left: 70%;"></div>
+                    <div class="face-point" style="top: 70%; left: 50%;"></div>
+                    <div class="face-point" style="top: 60%; left: 45%;"></div>
+                    <div class="face-point" style="top: 60%; left: 55%;"></div>
+                </div>
+                
+                <!-- Progress Ring -->
+                <svg class="progress-ring">
+                    <circle cx="155" cy="155" r="150" id="progressCircle"></circle>
+                </svg>
+                
+                <!-- Scanning Ring -->
+                <svg class="scanning-ring" id="scanningRing">
+                    <circle cx="160" cy="160" r="155"></circle>
+                </svg>
+                
+                <!-- Multi-angle Progress -->
+                <div class="angle-progress" id="angleProgress"></div>
+                
+                <!-- Blink Detection -->
+                <div class="blink-indicator" id="blinkIndicator">
+                    <i class="fas fa-eye"></i> Blink detected ✓
+                </div>
+                
+                <!-- Success Animation -->
+                <div class="success-animation" id="successAnimation">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                
+                <!-- Failure Animation -->
+                <div class="failure-animation" id="failureAnimation">
+                    <div class="failure-mark">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
             </div>
             
-            <!-- Face Detection Grid -->
-            <div class="face-detection-grid" id="detectionGrid">
-                <div class="grid-line grid-horizontal" style="top: 25%;"></div>
-                <div class="grid-line grid-horizontal" style="top: 50%;"></div>
-                <div class="grid-line grid-horizontal" style="top: 75%;"></div>
-                <div class="grid-line grid-vertical" style="left: 25%;"></div>
-                <div class="grid-line grid-vertical" style="left: 50%;"></div>
-                <div class="grid-line grid-vertical" style="left: 75%;"></div>
-                <div class="scanning-beam"></div>
-            </div>
-            
-            <!-- Face Detection Points -->
-            <div class="face-points" id="facePoints">
-                <div class="face-point" style="top: 25%; left: 35%;"></div>
-                <div class="face-point" style="top: 25%; left: 65%;"></div>
-                <div class="face-point" style="top: 40%; left: 50%;"></div>
-                <div class="face-point" style="top: 55%; left: 30%;"></div>
-                <div class="face-point" style="top: 55%; left: 70%;"></div>
-                <div class="face-point" style="top: 70%; left: 50%;"></div>
-                <div class="face-point" style="top: 60%; left: 45%;"></div>
-                <div class="face-point" style="top: 60%; left: 55%;"></div>
-            </div>
-            
-            <!-- Progress Ring -->
-            <svg class="progress-ring">
-                <circle cx="155" cy="155" r="150" id="progressCircle"></circle>
-            </svg>
-            
-            <!-- Scanning Ring -->
-            <svg class="scanning-ring" id="scanningRing">
-                <circle cx="160" cy="160" r="155"></circle>
-            </svg>
-            
-            <!-- Multi-angle Progress -->
-            <div class="angle-progress" id="angleProgress"></div>
-            
-            <!-- Blink Detection -->
-            <div class="blink-indicator" id="blinkIndicator">Blink detected ✓</div>
-            
-            <!-- Success Animation -->
-            <div class="success-animation" id="successAnimation">
-                <div class="checkmark"></div>
-            </div>
-            
-            <!-- Failure Animation -->
-            <div class="failure-animation" id="failureAnimation">
-                <div class="failure-mark"></div>
+            <div class="progress-info">
+                <div class="progress-text" id="progressText">0% Complete</div>
+                <div class="scan-instructions">
+                    <div class="instruction-step active" id="step1">
+                        <i class="fas fa-dot-circle"></i> Look straight ahead
+                    </div>
+                    <div class="instruction-step" id="step2">
+                        <i class="fas fa-arrow-right"></i> Turn head slowly right
+                    </div>
+                    <div class="instruction-step" id="step3">
+                        <i class="fas fa-arrow-up"></i> Look up slightly
+                    </div>
+                    <div class="instruction-step" id="step4">
+                        <i class="fas fa-arrow-left"></i> Turn head slowly left
+                    </div>
+                    <div class="instruction-step" id="step5">
+                        <i class="fas fa-arrow-down"></i> Look down slightly
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div class="progress-text" id="progressText">0% Complete</div>
-        
-        <div class="text-center mt-4">
+        <div class="scan-controls">
             <button type="button" id="startCapture" class="btn btn-faceid">
-                <i class="fas fa-play"></i> Start Scan
+                <i class="fas fa-play"></i> Start Face Scan
             </button>
-            <button type="button" id="stopCapture" class="btn btn-secondary" style="display: none;">
-                <i class="fas fa-stop"></i> Stop
+            <button type="button" id="stopCapture" class="btn btn-danger" style="display: none;">
+                <i class="fas fa-stop"></i> Stop Scan
             </button>
             <button type="button" id="flipCamera" class="btn btn-secondary">
-                <i class="fas fa-sync-alt"></i> Flip
+                <i class="fas fa-sync-alt"></i> Flip Camera
             </button>
         </div>
     </div>
     
     <!-- Processing -->
     <div id="processingSection" style="display: none;">
-        <h2 class="instruction-text">Processing Face Data</h2>
-        <div class="text-center">
-            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Processing...</span>
+        <div class="processing-container">
+            <div class="processing-icon">
+                <div class="processing-spinner">
+                    <i class="fas fa-brain"></i>
+                </div>
             </div>
-            <p class="status-text mt-3">Creating your Face ID profile...</p>
+            <h2 class="processing-title">Creating Your Face ID</h2>
+            <p class="processing-subtitle">Analyzing biometric data and securing your profile...</p>
+            
+            <div class="processing-steps">
+                <div class="processing-step active" id="processStep1">
+                    <i class="fas fa-search"></i> Analyzing facial features
+                </div>
+                <div class="processing-step" id="processStep2">
+                    <i class="fas fa-shield-alt"></i> Encrypting biometric data
+                </div>
+                <div class="processing-step" id="processStep3">
+                    <i class="fas fa-check-circle"></i> Finalizing setup
+                </div>
+            </div>
+            
+            <div class="processing-progress">
+                <div class="progress-bar" id="processingBar"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -157,19 +243,78 @@ class AppleFaceIDRegistration {
         document.getElementById('startCapture').addEventListener('click', () => this.startCapture());
         document.getElementById('stopCapture').addEventListener('click', () => this.stopCapture());
         document.getElementById('flipCamera').addEventListener('click', () => this.flipCamera());
+        
+        // Add input validation
+        document.getElementById('username').addEventListener('input', (e) => this.validateUsername(e.target.value));
+        document.getElementById('email').addEventListener('input', (e) => this.validateEmail(e.target.value));
+    }
+    
+    validateUsername(username) {
+        const feedback = document.getElementById('usernameFeedback');
+        if (username.length < 3) {
+            feedback.textContent = 'Username must be at least 3 characters';
+            feedback.className = 'input-feedback error';
+            return false;
+        } else if (username.length > 20) {
+            feedback.textContent = 'Username must be less than 20 characters';
+            feedback.className = 'input-feedback error';
+            return false;
+        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            feedback.textContent = 'Username can only contain letters, numbers, and underscores';
+            feedback.className = 'input-feedback error';
+            return false;
+        } else {
+            feedback.textContent = 'Username looks good!';
+            feedback.className = 'input-feedback success';
+            return true;
+        }
+    }
+    
+    validateEmail(email) {
+        const feedback = document.getElementById('emailFeedback');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            feedback.textContent = 'Please enter a valid email address';
+            feedback.className = 'input-feedback error';
+            return false;
+        } else {
+            feedback.textContent = 'Email looks good!';
+            feedback.className = 'input-feedback success';
+            return true;
+        }
     }
     
     async showFaceIdSetup() {
         const username = document.getElementById('username').value;
         const email = document.getElementById('email').value;
         
-        if (!username || !email) {
-            alert('Please fill in all fields');
+        if (!this.validateUsername(username) || !this.validateEmail(email)) {
+            // Add glitch effect for validation errors
+            document.getElementById('registrationForm').classList.add('glitch-effect');
+            setTimeout(() => {
+                document.getElementById('registrationForm').classList.remove('glitch-effect');
+            }, 500);
             return;
         }
         
-        document.getElementById('initialForm').style.display = 'none';
-        document.getElementById('faceIdSetup').style.display = 'block';
+        // Add loading state
+        document.getElementById('startRegistration').classList.add('loading');
+        
+        // Smooth transition with page transition effects
+        const initialForm = document.getElementById('initialForm');
+        const faceIdSetup = document.getElementById('faceIdSetup');
+        
+        initialForm.classList.add('page-transition-out');
+        
+        setTimeout(() => {
+            initialForm.style.display = 'none';
+            faceIdSetup.style.display = 'block';
+            faceIdSetup.classList.add('page-transition-in');
+            
+            setTimeout(() => {
+                faceIdSetup.classList.remove('page-transition-in');
+            }, 500);
+        }, 500);
         
         this.createAngleSegments();
         await this.startCamera();
@@ -249,8 +394,16 @@ class AppleFaceIDRegistration {
         this.capturedFrames = [];
         this.captureCount = 0;
         
-        document.getElementById('startCapture').style.display = 'none';
-        document.getElementById('stopCapture').style.display = 'inline-block';
+        const startBtn = document.getElementById('startCapture');
+        const stopBtn = document.getElementById('stopCapture');
+        
+        // Add breathing animation to the face circle
+        document.querySelector('.face-circle').classList.add('breathing');
+        
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        stopBtn.classList.add('interactive-hover');
+        
         document.getElementById('statusText').textContent = 'Scanning...';
         document.getElementById('scanningRing').classList.add('active');
         
@@ -295,6 +448,9 @@ class AppleFaceIDRegistration {
         
         document.getElementById('progressText').textContent = `${Math.round(progress)}% Complete`;
         
+        // Update instruction steps
+        this.updateInstructionSteps(progress);
+        
         // Update status text based on progress
         if (progress < 20) {
             document.getElementById('statusText').textContent = 'Move your head slowly to the right';
@@ -307,6 +463,22 @@ class AppleFaceIDRegistration {
         } else {
             document.getElementById('statusText').textContent = 'Finalizing scan...';
         }
+    }
+    
+    updateInstructionSteps(progress) {
+        const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+        const currentStep = Math.floor(progress / 20);
+        
+        steps.forEach((stepId, index) => {
+            const step = document.getElementById(stepId);
+            if (index < currentStep) {
+                step.className = 'instruction-step completed';
+            } else if (index === currentStep) {
+                step.className = 'instruction-step active';
+            } else {
+                step.className = 'instruction-step';
+            }
+        });
     }
     
     updateAngleCapture(progress) {
@@ -389,13 +561,33 @@ class AppleFaceIDRegistration {
     async finishCapture() {
         this.isCapturing = false;
         
-        // Show success animation
-        document.getElementById('successAnimation').classList.add('active');
+        // Remove breathing animation
+        document.querySelector('.face-circle').classList.remove('breathing');
+        
+        // Show success animation with enhanced effects
+        const successAnimation = document.getElementById('successAnimation');
+        successAnimation.classList.add('active');
         document.getElementById('statusText').textContent = 'Scan Complete!';
         
+        // Add success state to the entire face circle
+        document.querySelector('.face-circle').classList.add('success-state');
+        
         setTimeout(async () => {
-            document.getElementById('faceIdSetup').style.display = 'none';
-            document.getElementById('processingSection').style.display = 'block';
+            const faceIdSetup = document.getElementById('faceIdSetup');
+            const processingSection = document.getElementById('processingSection');
+            
+            // Smooth transition to processing
+            faceIdSetup.classList.add('page-transition-out');
+            
+            setTimeout(() => {
+                faceIdSetup.style.display = 'none';
+                processingSection.style.display = 'block';
+                processingSection.classList.add('page-transition-in');
+                
+                setTimeout(() => {
+                    processingSection.classList.remove('page-transition-in');
+                }, 500);
+            }, 500);
             
             // Stop camera
             if (this.stream) {
@@ -407,6 +599,9 @@ class AppleFaceIDRegistration {
     }
     
     async processRegistration() {
+        // Animate processing steps
+        this.animateProcessingSteps();
+        
         try {
             const response = await fetch('/api/register-face/', {
                 method: 'POST',
@@ -429,13 +624,51 @@ class AppleFaceIDRegistration {
                 setTimeout(() => {
                     alert('Face ID setup complete! You can now sign in with your face.');
                     window.location.href = '/login/';
-                }, 1500);
+                }, 2000);
             } else {
                 this.showFailure(result.message);
             }
         } catch (error) {
             this.showFailure('Registration failed. Please try again.');
         }
+    }
+    
+    animateProcessingSteps() {
+        const steps = ['processStep1', 'processStep2', 'processStep3'];
+        const progressBar = document.getElementById('processingBar');
+        
+        let currentStep = 0;
+        const stepInterval = setInterval(() => {
+            if (currentStep > 0) {
+                const prevStep = document.getElementById(steps[currentStep - 1]);
+                prevStep.classList.add('completed');
+                prevStep.classList.remove('active');
+                
+                // Add success glow effect to completed steps
+                prevStep.classList.add('success-state');
+                setTimeout(() => {
+                    prevStep.classList.remove('success-state');
+                }, 1000);
+            }
+            
+            if (currentStep < steps.length) {
+                const currentStepElement = document.getElementById(steps[currentStep]);
+                currentStepElement.classList.add('active');
+                
+                // Add breathing effect to active step
+                currentStepElement.classList.add('breathing');
+                
+                progressBar.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+                currentStep++;
+            } else {
+                clearInterval(stepInterval);
+                
+                // Final success animation
+                setTimeout(() => {
+                    document.querySelector('.processing-container').classList.add('success-state');
+                }, 500);
+            }
+        }, 1000);
     }
     
     showFailure(message) {
