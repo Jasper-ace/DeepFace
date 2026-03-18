@@ -1,342 +1,617 @@
 # Face Recognition Authentication System
 
-A modern web-based authentication system using facial recognition technology, built with Django and featuring an Apple Face ID-style interface.
+A comprehensive Django-based face recognition authentication system with real-time face detection, liveness detection, and advanced admin management features.
 
 ![Face ID Authentication](https://img.shields.io/badge/Authentication-Face%20ID-brightgreen)
 ![Django](https://img.shields.io/badge/Django-4.2+-blue)
-![Python](https://img.shields.io/badge/Python-3.8+-blue)
-![MySQL](https://img.shields.io/badge/Database-MySQL-orange)
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20PostgreSQL-orange)
 
-## Features
+## 🚀 Features
 
-- 🔐 **Secure Face Recognition Authentication**
-- 📱 **Apple Face ID Style Interface** with neon green animations
-- 🎯 **Real-time Face Detection** with confidence scoring
-- 👁️ **Liveness Detection** to prevent spoofing
-- 📊 **Authentication Logs & Analytics**
-- 🌙 **Dark Mode macOS-style Dashboard**
-- 🔒 **Session Management** with automatic timeout
-- 📱 **Responsive Design** for all devices
+- **🔐 Face Recognition Authentication**: Secure biometric login system
+- **📱 Apple Face ID Style Interface**: Modern UI with neon animations
+- **🎯 Real-time Face Detection**: Live camera feed with confidence scoring
+- **👁️ Liveness Detection**: Anti-spoofing measures to prevent photo attacks
+- **🛡️ Super Admin Dashboard**: Comprehensive user management system
+- **📍 IP Location Tracking**: Monitor user login locations and geographic data
+- **📊 Advanced Analytics**: Detailed authentication logs and statistics
+- **🌙 Dark Mode Interface**: macOS-inspired design with smooth animations
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
+- **⚡ Scalable Architecture**: Handle thousands of users with pagination
 
-## Screenshots
+## 📋 Prerequisites
 
-### Home Page
-Modern Face ID interface with animated scanning rings and detection points.
+Before installing, ensure you have:
 
-### Registration Process
-Multi-angle face capture with Apple-style progress indicators and blink detection.
-
-### Dashboard
-macOS-inspired dark interface with authentication statistics and activity logs.
-
-## Prerequisites
-
-Before setting up the project, ensure you have the following installed:
-
-- **Python 3.8 or higher**
-- **MySQL Server 8.0+**
-- **Git**
+- **Python 3.10+** installed ([Download Python](https://python.org/downloads/))
+- **Git** installed ([Download Git](https://git-scm.com/downloads))
+- **MySQL Server 8.0+** or **PostgreSQL 12+**
 - **Webcam/Camera** for face recognition
-- **Modern web browser** (Chrome, Firefox, Safari, Edge)
+- **Modern web browser** with camera support (Chrome, Firefox, Safari, Edge)
 
-## Installation & Setup
+## 🛠️ Complete Installation Guide
 
-### 1. Clone the Repository
+### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Jasper-ace/DeepFace.git
-cd DeepFace
+# Clone the repository
+git clone https://github.com/yourusername/face-recognition-auth.git
+
+# Navigate to project directory
+cd face-recognition-auth
 ```
 
-### 2. Create Virtual Environment
+### Step 2: Set Up Python Virtual Environment
 
+#### On Windows:
 ```bash
-# Windows
+# Create virtual environment
 python -m venv venv
+
+# Activate virtual environment
 venv\Scripts\activate
 
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
+# Verify activation (should show (venv) in prompt)
 ```
 
-### 3. Install Dependencies
+#### On macOS/Linux:
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Verify activation (should show (venv) in prompt)
+```
+
+### Step 3: Install Python Dependencies
 
 ```bash
+# Upgrade pip to latest version
+pip install --upgrade pip
+
+# Install all required packages
 pip install -r requirements.txt
 ```
 
-### 4. MySQL Database Setup
+**⚠️ Troubleshooting Installation Issues:**
 
-#### Option A: Create New Database
-```sql
-# Connect to MySQL
-mysql -u root -p
+If you encounter errors during installation:
 
-# Create database
-CREATE DATABASE deepface;
-USE deepface;
-
-# Run the setup script
-source setup_mysql.sql;
-```
-
-#### Option B: Use Existing Database
-If you already have a `deepface` database, just run:
+#### Windows:
 ```bash
-mysql -u root -p deepface < setup_mysql.sql
+# Install Visual Studio Build Tools (required for face_recognition)
+# Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+# Install CMake
+# Download from: https://cmake.org/download/
+
+# Alternative: Use conda
+conda install -c conda-forge dlib
+pip install face_recognition
 ```
 
-### 5. Configure Environment Variables
+#### macOS:
+```bash
+# Install Homebrew (if not installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-Create a `.env` file in the project root:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DB_NAME=deepface
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_HOST=localhost
-DB_PORT=3306
-FACE_CONFIDENCE_THRESHOLD=0.6
-LIVENESS_DETECTION=False
+# Install dependencies
+brew install cmake
+brew install dlib
+pip install face_recognition
 ```
 
-### 6. Run Django Migrations
+#### Ubuntu/Debian:
+```bash
+# Install system dependencies
+sudo apt-get update
+sudo apt-get install -y cmake libopenblas-dev liblapack-dev 
+sudo apt-get install -y libx11-dev libgtk-3-dev python3-dev
+sudo apt-get install -y build-essential cmake pkg-config
+vcodec-dev libavformat-dev libswscale-dev
+
+# Then install Python packages
+pip install -r requirements.txt
+```
+
+### Step 4: Database Setup
+
+#### Option A: MySQL (Recommended for Local Development)
+
+1. **Install MySQL Server**:
+   - **Windows**: Download from [MySQL Downloads](https://dev.mysql.com/downloads/mysql/)
+   - **macOS**: `brew install mysql`
+   - **Ubuntu**: `sudo apt-get install mysql-server`
+
+2. **Start MySQL Service**:
+   ```bash
+   # Windows (as Administrator)
+   net start mysql
+   
+   # macOS
+ervices start mysql
+   
+   # Ubuntu
+   sudo systemctl start mysql
+   ```
+
+3. **Create Database and User**:
+   ```bash
+   # Login to MySQL
+   mysql -u root -p
+   ```
+   
+   ```sql
+   -- Create database
+   CREATE DATABASE deepface CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   
+   -- Create user (optional but recommended)
+   CREATE USER 'deepface_user'@'localhost' IDENTIFIED BY 'secure_password_123';
+   
+   -- Grant privileges
+   GRANT ALL PRIVILEGES ON deepface.* TO 'deepface_user'@'localhost';
+   FLUSH PRIVILEGES;
+   
+   -- Verify database creation
+   SHOW DATABASES;
+   
+   -- Exit MySQL
+   EXIT;
+   ```
+
+4. **Update Database Configuration**:
+   
+   Edit `face_auth_project/settings.py`:
+   ```python
+   DATABASES = {
+       'default': {
+           'ENGINE': 'django.db.backends.mysql',
+           'NAME': 'deepface',
+           'USER': 'deepface_user',  # or 'root'
+           'PASSWORD': 'secure_password_123',  # your password
+           'HOST': 'localhost',
+           'PORT': '3306',
+           'OPTIONS': {
+               'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+           },
+       }
+   }
+   ```
+
+#### Option B: PostgreSQL (Production Ready)
+
+1. **Install PostgreSQL**:
+   - **Windows**: Download from [PostgreSQL Downloads](https://www.postgresql.org/download/)
+   - **macOS**: `brew install postgresql`
+   - **Ubuntu**: `sudo apt-get install postgresql postgresql-contrib`
+
+2. **Create Database**:
+   ```bash
+   # Switch to postgres user
+   sudo -u postgres psql
+   ```
+   
+   ```sql
+   -- Create database
+   ATE DATABASE deepface;
+   
+   -- Create user
+   CREATE USER deepface_user WITH PASSWORD 'secure_password_123';
+   
+   -- Grant privileges
+   GRANT ALL PRIVILEGES ON DATABASE deepface TO deepface_user;
+   
+   -- Exit PostgreSQL
+   \q
+   ```
+
+3. **Update settings.py**:
+   ```python
+   DATABASES = {
+       'default': {
+           'ENGINE': 'django.db.backends.postgresql',
+           'NAME': 'deepface',
+           'USER': 'deepface_user',
+           'PASSWORD': 'secure_password_123',
+           'HOST': 'localhost',
+           'PORT': '5432',
+       }
+   }
+   ```
+
+#### Option C: SQLite (Quick Testing Only)
+
+For quick testing without setting up MySQL/PostgreSQL:
+
+```python
+# In settings.py, replace DATABASES with:
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+```
+
+### Step 5: Environment Configuration
+
+1. **Create Environment File**:
+   ```bash
+   # Copy the example file
+   cp .env.example .env
+   ```
+
+2. **Edit .env file** with your settings:
+   ```env
+   # Django Settings
+   SECRET_KEY=your-very-secure-secret-key-here-make-it-long-and-random
+   DEBUG=True
+   ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+   
+   # Database (if using environment variables)
+   DB_NAME=deepface
+   DB_USER=deepface_user
+   DB_PASSWORD=secure_password_123
+   DB_HOST=localhost
+   DB_PORT=3306
+   
+   # Face Recognition Settings
+   FACE_CONFIDENCE_THRESHOLD=0.6
+   LIVENESS_DETECTION=True
+   
+   # Security
+   SESSION_COOKIE_AGE=1800
+   ```
+
+### Step 6: Initialize Database
 
 ```bash
+# Create and apply database migrations
 python manage.py makemigrations
 python manage.py migrate
+
+# Verify migrations were successful
+python manage.py showmigrations
 ```
 
-### 7. Collect Static Files
+### Step 7: Create Initial Superuser
 
 ```bash
+# Create initial admin user
+python manage.py create_initial_superuser --username=admin --email=admin@example.com
+
+# Or create manually
+python manage.py shell -c "
+from face_auth_app.models import FaceUser
+import json
+user = FaceUser.objects.create(
+    username='admin',
+    email='admin@example.com',
+    is_superadmin=True,
+    is_active=True,
+    face_encoding=json.dumps([0.0] * 128)  # Placeholder
+)
+print('Admin user created successfully')
+"
+```
+
+### Step 8: Collect Static Files
+
+```bash
+# Collect all static files
 python manage.py collectstatic --noinput
+
+# Verify static files were collected
+ls staticfiles/  # Should show admin/ and css/ directories
 ```
 
-### 8. Start the Development Server
+### Step 9: Test the Installation
 
 ```bash
-# Windows
-start_server.bat
+# Run system check
+python manage.py check
 
-# Or manually
+# Test database connection
+python manage.py s"
+from django.db import connection
+cursor = connection.cursor()
+cursor.execute('SELECT 1')
+print('Database connection successful!')
+"
+```
+
+### Step 10: Start the Development Server
+
+```bash
+# Start server on localhost
+python manage.py runserver
+
+# Or start on all interfaces (accessible from network)
+python manage.py runserver 0.0.0.0:8000
+
+# Or use custom port
+python manage.py runserver 8080
+```
+
+**🎉 Success!** The application should now be running at:
+- **Local**: http://127.0.0.1:8000
+//your-ip-address:8000
+e Registration Process**:nfiguration & Customizatiohon manage.py collectstatic --noinput
+
+# Run server
 python manage.py runserver
 ```
 
-### 9. Access the Application
+Visit http://127.0.0.1:8000 and start using face recognition authentication!
 
-Open your web browser and navigate to:
+---
+
+**⭐ Star this repository if you found it helpful!**
+
+**🐛 Found a bug? [Report it here](https://github.com/yourusername/face-recognition-auth/issues)**
+
+**💡 Have a feature idea? [Suggest it here](https://github.com/yourusername/face-recognition-auth/discussions)**otstrap.com/)** - CSS framework
+
+---
+
+## 🚀 Quick Start Summary
+
+For experienced developers, here's the quick setup:
+
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/face-recognition-auth.git
+cd face-recognition-auth
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+
+# Database setup (MySQL)
+mysql -u root -p -e "CREATE DATABASE deepface;"
+
+# Django setup
+python manage.py migrate
+python manage.py create_initial_superuser
+pytre`
+6. **Open Pull Request** with detailed description
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+### Technologies Used:
+- **[Django](https://djangoproject.com/)** - Web framework
+- **[face_recognition](https://github.com/ageitgey/face_recognition)** - Face recognition library
+- **[OpenCV](https://opencv.org/)** - Computer vision library
+- **[dlib](http://dlib.net/)** - Machine learning library
+- **[Bootstrap](https://getboents:
+
+**Minimum**:
+- 4GB RAM
+- 2GB storage
+- Webcam (720p)
+- Python 3.10+
+
+**Recommended**:
+- 8GB RAM
+- 5GB storage
+- HD Webcam (1080p)
+- SSD storage
+- Stable internet connection
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make changes** and test thoroughly
+4. **Commit changes**: `git commit -m 'Add amazing feature'`
+5. **Push to branch**: `git push origin feature/amazing-featuprocessing** - face recognition happens on your server
+- **Audit trail** - all authentication attempts logged
+
+## 📞 Support & Community
+
+### Getting Help:
+
+1. **Check Documentation**: Read this README thoroughly
+2. **Search Issues**: Look through [GitHub Issues](https://github.com/yourusername/face-recognition-auth/issues)
+3. **Browser Console**: Check for JavaScript errors (F12)
+4. **Server Logs**: Check Django console output for errors
+5. **Create Issue**: Report bugs with detailed information
+
+### System Requiremailable)
+- **Heroku** (Easy deployment)
+- **DigitalOcean** (VPS hosting)
+- **AWS** (Enterprise scale)
+
+## 🔒 Security Features
+
+### Data Protection:
+- **Face encodings are encrypted** before database storage
+- **No raw images stored** - only mathematical representations
+- **Session security** with automatic timeout
+- **IP logging** for security monitoring
+- **CSRF protection** enabled by default
+
+### Privacy Compliance:
+- **GDPR compliant** - users can delete their data
+- **No third-party data sharing**
+- **Local Not Detected
+
+**Symptoms**: "Could not detect face" error
+
+**Solutions**:
+- **Improve lighting**: Use bright, even lighting
+- **Position face properly**: Center face in camera view
+- **Remove obstructions**: Take off glasses, hat, mask
+- **Check camera quality**: Use HD camera if possible
+- **Try different angles**: Face camera directly
+
+## 🌐 Production Deployment
+
+For production deployment, see [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to:
+
+- **Render.com** (Recommended - Free tier avql
+
+# Ubuntu
+sudo systemctl start mysql
+sudo systemctl status mysql
+
+# Test connection
+mysql -u root -p -e "SELECT 1"
 ```
-http://localhost:8000
+
+#### 3. Camera Not Working
+
+**Symptoms**: Black screen, "Camera access denied"
+
+**Solutions**:
+- **Check browser permissions**: Click camera icon in address bar
+- **Try different browser**: Chrome is most reliable
+- **Check camera usage**: Close other apps using camera
+- **Use HTTPS or localhost**: Required for camera access
+- **Restart browser**: Sometimes permissions get stuck
+
+#### 4. Face lation Fails
+
+**Error**: `Microsoft Visual C++ 14.0 is required`
+
+**Solution**:
+```bash
+# Windows: Install Visual Studio Build Tools
+# Download: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+# Alternative: Use pre-compiled wheels
+pip install --upgrade pip
+pip install dlib-binary
+pip install face_recognition
 ```
 
-## Quick Start Guide
+#### 2. Database Connection Errors
 
-### For Windows Users
+**Error**: `Can't connect to MySQL server`
 
-1. **Double-click `start_server.bat`** - This will automatically:
-   - Create virtual environment
-   - Install dependencies
-   - Run migrations
-   - Start the server
+**Solution**:
+```bash
+# Check if MySQL is running
+# Windows
+net start mysql
 
-2. **Visit `http://localhost:8000`**
+# macOS
+brew services start mys
 
-3. **Allow camera permissions** when prompted
+1. **Find your IP address**:
+   ```bash
+   # Windows
+   ipconfig
+   
+   # macOS/Linux
+   ifconfig
+   ```
 
-4. **Register a new user:**
-   - Click "Set Up Face ID"
-   - Enter username and email
-   - Follow the face registration process
-   - Move your head slowly for multi-angle capture
+2. **Start server on all interfaces**:
+   ```bash
+   python manage.py runserver 0.0.0.0:8000
+   ```
 
-5. **Test authentication:**
-   - Click "Sign In"
-   - Look at the camera
-   - Blink naturally during authentication
+3. **Update ALLOWED_HOSTS** in settings.py:
+   ```python
+   ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'your-ip-address', '*']
+   ```
 
-## Project Structure
+4. **Access from other devices**:
+   ```
+   http://your-ip-address:8000
+   ```
 
-```
-DeepFace/
-├── face_auth_app/          # Main Django application
-│   ├── models.py           # Database models
-│   ├── views.py            # View controllers
-│   ├── face_recognition_utils.py  # Face recognition logic
-│   ├── middleware.py       # Authentication middleware
-│   └── decorators.py       # Custom decorators
-├── face_auth_project/      # Django project settings
-│   ├── settings.py         # Configuration
-│   └── urls.py            # URL routing
-├── templates/              # HTML templates
-│   ├── base.html          # Base template
-│   ├── home.html          # Landing page
-│   ├── register.html      # Face registration
-│   ├── login.html         # Face authentication
-│   ├── dashboard.html     # User dashboard
-│   └── logs.html          # Authentication logs
-├── static/                 # Static files (CSS, JS)
-├── requirements.txt        # Python dependencies
-├── setup_mysql.sql        # Database setup script
-├── start_server.bat       # Windows startup script
-└── README.md              # This file
-```
+## 🚨 Troubleshooting Guide
 
-## Configuration
+### Common Installation Issues
+
+#### 1. Face Recognition Instaln
 
 ### Face Recognition Settings
 
 Edit `face_auth_project/settings.py`:
 
 ```python
-# Face Recognition Settings
-FACE_CONFIDENCE_THRESHOLD = 0.6  # Adjust for sensitivity (0.0-1.0)
-FACE_CAPTURE_FRAMES = 25         # Number of frames to capture
-LIVENESS_DETECTION = False       # Enable/disable liveness detection
+# Recognition sensitivity (0.0 = very strict, 1.0 = very lenient)
+FACE_CONFIDENCE_THRESHOLD = 0.6
+
+# Number of frames to capture during registration
+FACE_CAPTURE_FRAMES = 25
+
+# Enable anti-spoofing liveness detection
+LIVENESS_DETECTION = True
+
+# Session timeout in seconds (1800 = 30 minutes)
+SESSION_COOKIE_AGE = 1800
 ```
 
-### Session Settings
+### Network Access Configuration
 
-```python
-# Session Configuration
-SESSION_COOKIE_AGE = 1800        # 30 minutes
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+To access from other devices on your network:
+from face_auth_app.models import FaceUser
+user = FaceUser.objects.get(username='your_username')
+user.is_superadmin = True
+user.save()
+print(f'{user.username} is now a super admin')
+"
 ```
 
-## Troubleshooting
+Then access admin features:
+- **Dashboard**: http://127.0.0.1:8000/dashboard/
+- **Super Admin**: http://127.0.0.1:8000/superadmin/
+- **User Management**: http://127.0.0.1:8000/superadmin/users/
+- **System Logs**: http://127.0.0.1:8000/superadmin/logs/
+- **IP Location**: http://127.0.0.1:8000/superadmin/location/
 
-### Common Issues
+## ⚙️ Co
+   - Look directly at the camera
+   - Keep your face centered in the circle
+   - Move your head slowly: left → right → up → down
+   - Blink naturally during the process
+   - Wait for "Face ID setup complete" message
 
-**Camera not working:**
-- Allow camera permissions in browser
-- Check if camera is being used by another application
-- Try a different browser
+### 4. Test Face Authentication
 
-**Database connection error:**
-- Ensure MySQL server is running
-- Verify credentials in `.env` file
-- Check if `deepface` database exists
+1. **Click "Sign In"**
+2. **Look at the camera**
+3. **Blink naturally**
+4. **System should recognize you** and log you in automatically
 
-**Face not detected:**
-- Ensure good lighting conditions
-- Position face clearly in camera view
-- Try different angles
+### 5. Access Super Admin Features
 
-**Low confidence scores:**
-- Improve lighting
-- Re-register with better positioning
-- Ensure face is clearly visible
+Make your user a super admin:
 
-**Import errors:**
-- Activate virtual environment: `venv\Scripts\activate`
-- Reinstall dependencies: `pip install -r requirements.txt`
+```bash
+python manage.py shell -c "
+## 🎯 First Time Setup & Usage
 
-### Browser Compatibility
+### 1. Access the Application
 
-Recommended browsers:
-- ✅ Chrome 80+
-- ✅ Firefox 75+
-- ✅ Safari 13+
-- ✅ Edge 80+
-
-### Performance Tips
-
-- Use good lighting for better face detection
-- Keep face centered in camera view
-- Move slowly during registration
-- Ensure stable internet connection
-- Close other applications using the camera
-
-## Security Features
-
-- **Face Encoding Encryption** - Face data is encoded and stored securely
-- **Session Management** - Automatic session timeout and validation
-- **IP Tracking** - Login attempts are logged with IP addresses
-- **Confidence Thresholds** - Configurable authentication sensitivity
-- **Browser Navigation Protection** - Prevents unauthorized access via browser history
-
-## API Endpoints
-
-### Authentication
-- `POST /register_face/` - Register new user with face data
-- `POST /authenticate_face/` - Authenticate user with face
-- `POST /logout/` - Logout user
-
-### Dashboard
-- `GET /dashboard/` - User dashboard (requires authentication)
-- `GET /logs/` - Authentication logs (requires authentication)
-
-## Database Schema
-
-### Users Table
-```sql
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
-    email VARCHAR(150) UNIQUE,
-    face_encoding LONGTEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE
-);
+Open your web browser and navigate to:
+```
+http://127.0.0.1:8000
 ```
 
-### Recognition Logs Table
-```sql
-CREATE TABLE recognition_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    confidence FLOAT NOT NULL,
-    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
+### 2. Allow Camera Permissions
 
-## Contributing
+When prompted by your browser:
+1. Click **"Allow"** for camera access
+2. If blocked, click the camera icon in address bar
+3. Select **"Always allow"** for this site
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### 3. Register Your First User
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Credits
-
-**Created by:**
-- Jasper Ace N. Lapitan
-- Christian Paul G. Cudal  
-- Donn Franckie Whilliaem J. Licudine
-
-## Acknowledgments
-
-- **face_recognition** library for facial recognition capabilities
-- **OpenCV** for computer vision processing
-- **Django** web framework
-- **Apple** for Face ID interface inspiration
-
-## Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Troubleshooting](#troubleshooting) section
-2. Review the [Issues](https://github.com/Jasper-ace/DeepFace/issues) page
-3. Create a new issue with detailed information
-
-## Version History
-
-- **v1.0.0** - Initial release with basic face recognition
-- **v1.1.0** - Added Apple Face ID style interface
-- **v1.2.0** - Implemented macOS-style dashboard
-- **v1.3.0** - Enhanced security and session management
-
----
-
-**⭐ Star this repository if you found it helpful!**
+1. **Click "Set Up Face ID"**
+2. **Enter Details**:
+   - Username: `your_username`
+   - Email: `your_email@example.com`
+3. **Fac
