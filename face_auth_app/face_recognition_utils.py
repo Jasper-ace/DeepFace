@@ -50,14 +50,55 @@ class FaceRecognitionService:
     def decode_face_data(self, face_encoding_json):
         """Convert JSON string back to numpy array"""
         try:
-            return np.array(json.loads(face_encoding_json))
-        except:
+            if face_encoding_json is None:
+                logger.warning("Face encoding JSON is None")
+                return None
+            
+            # Handle both string and already decoded data
+            if isinstance(face_encoding_json, str):
+                data = json.loads(face_encoding_json)
+            else:
+                data = face_encoding_json
+            
+            # Ensure it's a list/array, not a dict
+            if isinstance(data, dict):
+                # Skip corrupted data silently (likely test users)
+                logger.warning("Face encoding data is a dictionary - corrupted data")
+                return None
+                
+            # Convert to numpy array
+            encoding = np.array(data)
+            
+            # Validate the encoding shape (should be 128-dimensional)
+            if encoding.shape != (128,):
+                logger.warning(f"Invalid face encoding shape: {encoding.shape}, expected (128,)")
+                return None
+                
+            return encoding
+            
+        except Exception as e:
+            logger.error(f"Error decoding face data: {str(e)}")
             return None
     
     def compare_faces(self, known_encoding, unknown_encoding):
         """Compare two face encodings and return similarity score"""
         try:
             if known_encoding is None or unknown_encoding is None:
+                logger.warning("One or both encodings are None")
+                return 0.0
+            
+            # Ensure both encodings are numpy arrays
+            if not isinstance(known_encoding, np.ndarray):
+                logger.warning("Known encoding is not a numpy array")
+                return 0.0
+                
+            if not isinstance(unknown_encoding, np.ndarray):
+                logger.warning("Unknown encoding is not a numpy array")
+                return 0.0
+            
+            # Validate encoding shapes
+            if known_encoding.shape != (128,) or unknown_encoding.shape != (128,):
+                logger.warning(f"Invalid encoding shapes: known={known_encoding.shape}, unknown={unknown_encoding.shape}")
                 return 0.0
                 
             # Use face_recognition's compare_faces function
@@ -72,6 +113,7 @@ class FaceRecognitionService:
                 
                 return max(0.0, min(1.0, confidence))
             
+            # No match found
             return 0.0
             
         except Exception as e:

@@ -1,6 +1,21 @@
 @echo off
-echo Face Recognition Authentication System
-echo =====================================
+echo Face Recognition Authentication System - Network Mode
+echo ====================================================
+echo.
+
+REM Get the current IP address
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
+    for /f "tokens=1" %%b in ("%%a") do (
+        set "IP=%%b"
+        goto :found
+    )
+)
+
+:found
+REM Remove leading spaces
+for /f "tokens=* delims= " %%a in ("%IP%") do set IP=%%a
+
+echo Detected IP Address: %IP%
 echo.
 
 REM Check if virtual environment exists
@@ -29,10 +44,12 @@ python manage.py collectstatic --noinput
 REM Start server
 echo.
 echo Starting Django development server...
-echo Visit: http://192.168.1.7:8000 (Network Access)
-echo Visit: http://localhost:8000 (Local Access)
+echo Network Access: http://%IP%:8000
+echo Local Access: http://localhost:8000
+echo.
+echo Other devices on your network can access: http://%IP%:8000
 echo Press Ctrl+C to stop the server
 echo.
-python manage.py runserver 192.168.1.7:8000
+python manage.py runserver %IP%:8000
 
 pause

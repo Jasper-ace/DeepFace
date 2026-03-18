@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+
+{% block title %}User IP Location - Super Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #000000 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    .admin-container {
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
+    }
+    
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+    }
+    
+    .admin-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .ip-display-card {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 16px;
+        padding: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .ip-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .ip-address {
+        font-size: 36px;
+        font-weight: 700;
+        color: #00ff88;
+        margin-bottom: 20px;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        letter-spacing: 2px;
+    }
+    
+    .ip-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: #ffffff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
+    }
+    
+    .ip-link:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+        color: #ffffff;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 123, 255, 0.3);
+    }
+    
+    .logs-container {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        backdrop-filter: blur(20px);
+    }
+    
+    .logs-header {
+        background: rgba(30, 30, 32, 0.8);
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .logs-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #ffffff;
+    }
+    
+    .logs-table thead {
+        background: rgba(30, 30, 32, 0.6);
+    }
+    
+    .logs-table th {
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 600;
+        color: #00ff88;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        letter-spacing: 0.3px;
+    }
+    
+    .logs-table td {
+        padding: 16px 20px;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+    }
+    
+    .logs-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .logs-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #ffffff;
+        font-size: 14px;
+    }
+    
+    .user-details h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #ffffff;
+        font-size: 14px;
+    }
+    
+    .user-details small {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+    }
+    
+    .log-date {
+        color: #ffffff;
+        font-weight: 400;
+    }
+    
+    .log-time {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    
+    .confidence-bar-container {
+        width: 120px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .confidence-bar {
+        height: 100%;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        transition: width 0.3s ease;
+    }
+    
+    .confidence-high {
+        background: linear-gradient(135deg, #30d158 0%, #28ca42 100%);
+        color: #000;
+    }
+    
+    .confidence-medium {
+        background: linear-gradient(135deg, #ffd60a 0%, #ffcc02 100%);
+        color: #000;
+    }
+    
+    .confidence-low {
+        background: linear-gradient(135deg, #ff453a 0%, #ff2d20 100%);
+        color: #fff;
+    }
+    
+    .log-ip {
+        color: rgba(255, 255, 255, 0.8);
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        font-size: 13px;
+    }
+    
+    .log-ip a {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+    }
+    
+    .log-ip a:hover {
+        background: rgba(0, 255, 136, 0.1);
+        color: #00ff88 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2);
+        text-decoration: none;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .status-success {
+        background: linear-gradient(135deg, #30d158 0%, #28ca42 100%);
+        color: #000;
+        box-shadow: 0 2px 4px rgba(48, 209, 88, 0.2);
+    }
+    
+    .status-failed {
+        background: linear-gradient(135deg, #ff453a 0%, #ff2d20 100%);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(255, 69, 58, 0.2);
+    }
+    
+    .admin-btn {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border: none;
+        border-radius: 8px;
+        color: #000000;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+    }
+    
+    .admin-btn:hover {
+        background: linear-gradient(135deg, #00ff88 0%, #00aa55 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 255, 136, 0.3);
+        color: #000000;
+        text-decoration: none;
+    }
+    
+    .admin-btn.secondary {
+        background: linear-gradient(135deg, rgba(72, 72, 74, 0.8) 0%, rgba(60, 60, 62, 0.8) 100%);
+        color: #ffffff;
+    }
+    
+    .admin-btn.secondary:hover {
+        background: linear-gradient(135deg, rgba(72, 72, 74, 1) 0%, rgba(60, 60, 62, 1) 100%);
+        color: #ffffff;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="admin-title">
+            <i class="fas fa-map-marker-alt" style="color: #00ff88;"></i>
+            User IP Location
+        </h1>
+        <div>
+            <a href="{% url 'manage_users' %}" class="admin-btn secondary">
+                <i class="fas fa-users"></i>
+                Manage Users
+            </a>
+            <a href="{% url 'superadmin' %}" class="admin-btn secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Admin
+            </a>
+        </div>
+    </div>
+    
+    <!-- IP Display -->
+    <div class="ip-display-card">
+        <h2 class="ip-title">
+            <i class="fas fa-globe"></i>
+            Detected IP Address
+        </h2>
+        <div class="ip-address">{{ detected_ip|default:"127.0.0.1" }}</div>
+        <a href="https://whatismyipaddress.com/ip/{{ detected_ip|default:'127.0.0.1' }}" 
+           target="_blank" class="ip-link">
+            <i class="fas fa-external-link-alt"></i>
+            View IP Details on whatismyipaddress.com
+        </a>
+        <p style="color: rgba(255, 255, 255, 0.6); font-size: 14px; margin-top: 16px;">
+            This is the same IP address shown in the logs
+        </p>
+    </div>
+    
+    <!-- Latest User Logs -->
+    <div class="logs-container">
+        <div class="logs-header">
+            <h3 class="logs-title">
+                <i class="fas fa-history"></i>
+                Latest Session Per User
+            </h3>
+            <p style="color: rgba(255, 255, 255, 0.6); font-size: 14px; margin: 8px 0 0 0;">
+                Most recent login session for each user from IP: {{ detected_ip|default:"127.0.0.1" }}
+            </p>
+        </div>
+        
+        {% if users_latest_logs %}
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Last Login</th>
+                    <th>Confidence</th>
+                    <th>IP Address</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in users_latest_logs %}
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {{ log.user.username|first|upper }}
+                            </div>
+                            <div class="user-details">
+                                <h6>{{ log.user.username }}</h6>
+                                <small>{{ log.user.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="log-date">{{ log.detected_at|date:"M d, Y" }}</div>
+                        <div class="log-time">{{ log.detected_at|time:"g:i A" }}</div>
+                        <div class="log-time" style="font-size: 10px; opacity: 0.6;">
+                            {{ log.detected_at|timesince }} ago
+                        </div>
+                    </td>
+                    <td>
+                        <div class="confidence-bar-container">
+                            <div class="confidence-bar {% if log.confidence >= 0.6 %}confidence-high{% elif log.confidence >= 0.5 %}confidence-medium{% else %}confidence-low{% endif %}" 
+                                 data-confidence="{{ log.confidence }}"
+                                 style="width: 0%">
+                                {{ log.confidence|floatformat:3 }}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="log-ip">
+                        {% if log.ip_address and log.ip_address != "Unknown" %}
+                            <div class="d-flex align-items-center">
+                                <!-- IP Type Indicator -->
+                                {% if log.ip_address == "127.0.0.1" %}
+                                    <span class="badge bg-secondary me-2" style="font-size: 8px; background: rgba(108, 117, 125, 0.8) !important; color: #fff; padding: 2px 6px; border-radius: 4px; margin-right: 8px;">LOCAL</span>
+                                {% elif log.ip_address|slice:":7" == "192.168" or log.ip_address|slice:":3" == "10." or log.ip_address|slice:":7" == "172.16" %}
+                                    <span class="badge bg-warning me-2" style="font-size: 8px; background: rgba(255, 193, 7, 0.8) !important; color: #000; padding: 2px 6px; border-radius: 4px; margin-right: 8px;">LAN</span>
+                                {% else %}
+                                    <span class="badge bg-success me-2" style="font-size: 8px; background: rgba(25, 135, 84, 0.8) !important; color: #fff; padding: 2px 6px; border-radius: 4px; margin-right: 8px;">WAN</span>
+                                {% endif %}
+                                
+                                <a href="https://whatismyipaddress.com/ip/{{ log.ip_address }}" 
+                                   target="_blank" 
+                                   title="View IP information on whatismyipaddress.com">
+                                    {{ log.ip_address }}
+                                    <i class="fas fa-external-link-alt ms-1" style="font-size: 10px; opacity: 0.7; margin-left: 4px;"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <span style="color: rgba(255, 255, 255, 0.5);">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.confidence >= 0.6 %}
+                            <span class="status-badge status-success">
+                                <i class="fas fa-check"></i>
+                                Success
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-failed">
+                                <i class="fas fa-times"></i>
+                                Failed
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-history" style="font-size: 48px; margin-bottom: 16px;"></i>
+            <h3>No Login History</h3>
+            <p>No authentication attempts found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set confidence bar widths
+    const confidenceBars = document.querySelectorAll('.confidence-bar[data-confidence]');
+    confidenceBars.forEach(bar => {
+        const confidence = parseFloat(bar.getAttribute('data-confidence'));
+        const percentage = Math.round(confidence * 100);
+        bar.style.width = percentage + '%';
+    });
+});
+
+// Auto-refresh every 5 minutes
+setTimeout(() => {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

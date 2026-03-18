@@ -11,7 +11,54 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                        <h6>Network Information:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Network IP:</strong> 
+                                <span class="badge bg-success">{{ network_ip }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Network URL:</strong><br>
+                                <a href="{{ server_urls.network }}" target="_blank" class="text-decoration-none">
+                                    {{ server_urls.network }}
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Local URL:</strong><br>
+                                <a href="{{ server_urls.local }}" target="_blank" class="text-decoration-none">
+                                    {{ server_urls.local }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <h6>IP Detection:</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Your IP:</strong> 
+                                <span class="badge bg-{{ ip_info.is_client_private|yesno:'warning,primary' }}">
+                                    {{ ip_info.detected_client_ip }}
+                                </span>
+                                <small class="d-block text-muted">
+                                    {{ ip_info.is_client_private|yesno:'Private,Public' }}
+                                </small>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Server Network IP:</strong><br>
+                                <span class="badge bg-info">{{ ip_info.server_network_ip }}</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Server Public IP:</strong><br>
+                                <span class="badge bg-{{ ip_info.server_public_ip|yesno:'success,secondary' }}">
+                                    {{ ip_info.server_public_ip|default:'Not detected' }}
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-3">
                         <h6>Current Settings:</h6>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item">
@@ -31,7 +78,7 @@
                         </ul>
                     </div>
                     
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <h6>Registered Users:</h6>
                         <div class="list-group">
                             {% for user in users %}
@@ -45,6 +92,37 @@
                                 No users registered yet
                             </div>
                             {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- IP Headers Debug Info -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Request Headers (IP Related):</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Header</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for header, value in ip_info.headers.items %}
+                                    <tr>
+                                        <td><code>{{ header }}</code></td>
+                                        <td>
+                                            {% if value %}
+                                                <span class="badge bg-success">{{ value }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Not set</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

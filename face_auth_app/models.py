@@ -9,6 +9,7 @@ class FaceUser(models.Model):
     face_encoding = models.TextField()  # Store face encoding as JSON string
     created_at = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
+    is_superadmin = models.BooleanField(default=False)  # Super admin flag
 
     def __str__(self):
         return self.username

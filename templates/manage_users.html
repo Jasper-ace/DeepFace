@@ -1,0 +1,581 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users - Super Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
+    }
+    
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .admin-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .stats-bar {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 12px;
+        padding: 16px 24px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+    }
+    
+    .filter-bar {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 16px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .filter-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .filter-input, .filter-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #ffffff;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .users-table-container {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #ffffff;
+    }
+    
+    .users-table thead {
+        background: rgba(30, 30, 32, 0.8);
+    }
+    
+    .users-table th {
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 600;
+        color: #00ff88;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .users-table td {
+        padding: 12px 20px;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #000000;
+        font-size: 14px;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .status-active {
+        background: rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+    }
+    
+    .status-inactive {
+        background: rgba(255, 69, 58, 0.2);
+        color: #ff453a;
+    }
+    
+    .status-superadmin {
+        background: rgba(255, 214, 10, 0.2);
+        color: #ffd60a;
+    }
+    
+    .action-btn {
+        background: rgba(72, 72, 74, 0.8);
+        border: none;
+        border-radius: 4px;
+        color: #ffffff;
+        font-size: 11px;
+        padding: 4px 8px;
+        cursor: pointer;
+        margin: 0 2px;
+    }
+    
+    .action-btn.danger {
+        background: rgba(255, 69, 58, 0.8);
+    }
+    
+    .action-btn.success {
+        background: rgba(0, 255, 136, 0.8);
+        color: #000000;
+    }
+    
+    .admin-btn {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border: none;
+        border-radius: 8px;
+        color: #000000;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 24px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .admin-btn.secondary {
+        background: linear-gradient(135deg, rgba(72, 72, 74, 0.8) 0%, rgba(60, 60, 62, 0.8) 100%);
+        color: #ffffff;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .pagination-info {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+    }
+    
+    .pagination-links {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .pagination-links a, .pagination-links span {
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        background: rgba(72, 72, 74, 0.8);
+        color: #ffffff;
+    }
+    
+    .pagination-links .current {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        color: #000000;
+    }
+    
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .alert-success {
+        background: rgba(0, 255, 136, 0.1);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+        color: #00ff88;
+    }
+    
+    .alert-error {
+        background: rgba(255, 69, 58, 0.1);
+        border: 1px solid rgba(255, 69, 58, 0.3);
+        color: #ff453a;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="admin-title">
+            <i class="fas fa-users-cog" style="color: #00ff88;"></i>
+            Manage Users
+        </h1>
+        <div>
+            <a href="{% url 'export_users' %}?{% if search %}search={{ search }}&{% endif %}{% if status_filter != 'all' %}status={{ status_filter }}&{% endif %}{% if role_filter != 'all' %}role={{ role_filter }}{% endif %}" 
+               class="admin-btn secondary">
+                <i class="fas fa-download"></i>
+                Export CSV
+            </a>
+            <a href="{% url 'server_location' %}" class="admin-btn">
+                <i class="fas fa-map-marker-alt"></i>
+                Server Location
+            </a>
+            <a href="{% url 'superadmin' %}" class="admin-btn secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Admin
+            </a>
+        </div>
+    </div>
+    
+    <!-- Statistics Bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.active_users }}</div>
+            <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.inactive_users }}</div>
+            <div class="stat-label">Inactive</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.superadmins }}</div>
+            <div class="stat-label">Super Admins</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.filtered_count }}</div>
+            <div class="stat-label">Filtered Results</div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label">Search Users</label>
+                <input type="text" name="search" class="filter-input" 
+                       placeholder="Search by username or email..." 
+                       value="{{ search }}" 
+                       autocomplete="off">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select name="status" class="filter-select">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Role</label>
+                <select name="role" class="filter-select">
+                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                    <option value="regular" {% if role_filter == 'regular' %}selected{% endif %}>Regular Users</option>
+                    <option value="superadmin" {% if role_filter == 'superadmin' %}selected{% endif %}>Super Admins</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Sort By</label>
+                <select name="sort" class="filter-select">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                    <option value="username" {% if sort_by == 'username' %}selected{% endif %}>Username A-Z</option>
+                    <option value="-username" {% if sort_by == '-username' %}selected{% endif %}>Username Z-A</option>
+                    <option value="email" {% if sort_by == 'email' %}selected{% endif %}>Email A-Z</option>
+                    <option value="-email" {% if sort_by == '-email' %}selected{% endif %}>Email Z-A</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="admin-btn">
+                    <i class="fas fa-search"></i>
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Alert Messages -->
+    <div id="alertMessage" class="alert"></div>
+    
+    <!-- Users Table -->
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_item in users %}
+                <tr id="user-{{ user_item.id }}">
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {{ user_item.username|first|upper }}
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 600; color: #ffffff; font-size: 14px;">{{ user_item.username }}</h6>
+                                <small style="color: rgba(255, 255, 255, 0.6); font-size: 12px;">{{ user_item.email }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge {% if user_item.is_active %}status-active{% else %}status-inactive{% endif %}">
+                            <i class="fas fa-{% if user_item.is_active %}check-circle{% else %}times-circle{% endif %}"></i>
+                            {% if user_item.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if user_item.is_superadmin %}
+                            <span class="status-badge status-superadmin">
+                                <i class="fas fa-crown"></i>
+                                Super Admin
+                            </span>
+                        {% else %}
+                            <span style="color: rgba(255, 255, 255, 0.6); font-size: 12px;">Regular User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="color: #ffffff; font-size: 13px;">{{ user_item.created_at|date:"M d, Y" }}</div>
+                        <small style="color: rgba(255, 255, 255, 0.6);">{{ user_item.created_at|time:"g:i A" }}</small>
+                    </td>
+                    <td>
+                        <button class="action-btn {% if user_item.is_active %}danger{% else %}success{% endif %}" 
+                                onclick="toggleUserStatus({{ user_item.id }}, 'toggle_active')"
+                                title="{% if user_item.is_active %}Deactivate{% else %}Activate{% endif %} user">
+                            <i class="fas fa-{% if user_item.is_active %}ban{% else %}check{% endif %}"></i>
+                        </button>
+                        
+                        {% if user_item.id != user.id %}
+                            <button class="action-btn {% if user_item.is_superadmin %}danger{% else %}success{% endif %}" 
+                                    onclick="toggleUserStatus({{ user_item.id }}, 'toggle_superadmin')"
+                                    title="{% if user_item.is_superadmin %}Revoke{% else %}Grant{% endif %} super admin">
+                                <i class="fas fa-{% if user_item.is_superadmin %}user-minus{% else %}user-plus{% endif %}"></i>
+                            </button>
+                            
+                            <button class="action-btn danger" 
+                                    onclick="deleteUser({{ user_item.id }}, '{{ user_item.username|escapejs }}')"
+                                    title="Delete user">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <span style="color: rgba(255, 255, 255, 0.5); font-size: 11px;">(You)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 40px;">
+                        {% if search or status_filter != 'all' or role_filter != 'all' %}
+                            No users match your search criteria.
+                            <br><br>
+                            <a href="{% url 'manage_users' %}" class="admin-btn secondary">
+                                <i class="fas fa-times"></i>
+                                Clear Filters
+                            </a>
+                        {% else %}
+                            No users found
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div class="pagination">
+        <div class="pagination-info">
+            Showing {{ users.start_index }} to {{ users.end_index }} of {{ users.paginator.count }} users
+        </div>
+        
+        <div class="pagination-links">
+            {% if users.has_previous %}
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&laquo; First</a>
+                <a href="?page={{ users.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Previous</a>
+            {% endif %}
+            
+            <span class="current">
+                Page {{ users.number }} of {{ users.paginator.num_pages }}
+            </span>
+            
+            {% if users.has_next %}
+                <a href="?page={{ users.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Next</a>
+                <a href="?page={{ users.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Last &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showAlert(message, type) {
+    const alert = document.getElementById('alertMessage');
+    alert.className = 'alert alert-' + type;
+    alert.textContent = message;
+    alert.style.display = 'block';
+    
+    setTimeout(function() {
+        alert.style.display = 'none';
+    }, 5000);
+}
+
+function toggleUserStatus(userId, action) {
+    if (!confirm('Are you sure you want to perform this action?')) {
+        return;
+    }
+    
+    fetch('{% url "manage_users" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=' + action + '&user_id=' + userId
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        showAlert('An error occurred', 'error');
+    });
+}
+
+function deleteUser(userId, username) {
+    if (!confirm('Are you sure you want to delete user "' + username + '"? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch('{% url "manage_users" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'action=delete_user&user_id=' + userId
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            document.getElementById('user-' + userId).remove();
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(function(error) {
+        showAlert('An error occurred', 'error');
+    });
+}
+
+// Auto-submit form on filter changes
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.filter-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search with debounce
+    const searchInput = document.querySelector('input[name="search"]');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            searchInput.form.submit();
+        }, 800);
+    });
+});
+</script>
+{% endblock %}

@@ -2,19 +2,140 @@ import json
 import base64
 import cv2
 import numpy as np
+import socket
+from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
+from django.db import models
 from .models import FaceUser, RecognitionLog, LoginSession
 from .face_recognition_utils import FaceRecognitionService
-from .decorators import face_auth_required
+from .decorators import face_auth_required, superadmin_required
 import logging
 
 logger = logging.getLogger(__name__)
 face_service = FaceRecognitionService()
+
+
+def get_server_ip():
+    """Get the server's actual network IP address"""
+    try:
+        # Connect to a remote address to determine the local IP
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        # Fallback to localhost if unable to determine network IP
+        return "127.0.0.1"
+
+
+def get_client_ip(request):
+    """Get client IP address with enhanced detection for real IPs"""
+    # Check for forwarded IP first (for reverse proxies, load balancers)
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # Take the first IP in the chain (original client)
+        ip = x_forwarded_for.split(',')[0].strip()
+        # Validate it's not a private/local IP
+        if not is_private_ip(ip):
+            return ip
+    
+    # Check other proxy headers
+    real_ip = request.META.get('HTTP_X_REAL_IP')
+    if real_ip and not is_private_ip(real_ip):
+        return real_ip
+    
+    # Check CF-Connecting-IP (Cloudflare)
+    cf_ip = request.META.get('HTTP_CF_CONNECTING_IP')
+    if cf_ip and not is_private_ip(cf_ip):
+        return cf_ip
+    
+    # Get direct connection IP
+    remote_addr = request.META.get('REMOTE_ADDR')
+    
+    # If it's a local/private connection, try to get a more meaningful IP
+    if remote_addr and is_private_ip(remote_addr):
+        # For localhost connections, use the server's public IP if available
+        if remote_addr in ['127.0.0.1', '::1']:
+            public_ip = get_public_ip()
+            if public_ip and public_ip != '127.0.0.1':
+                return public_ip
+            # Fallback to server's network IP
+            return get_server_ip()
+        else:
+            # For local network connections, keep the actual local IP
+            # This preserves the real source IP within the network
+            return remote_addr
+    
+    return remote_addr or '127.0.0.1'
+
+
+def is_private_ip(ip):
+    """Check if IP address is private/local"""
+    if not ip:
+        return True
+    
+    # Common local/private IP patterns
+    private_patterns = [
+        '127.',      # Loopback
+        '10.',       # Private Class A
+        '172.16.',   # Private Class B start
+        '172.17.',   # Private Class B
+        '172.18.',   # Private Class B
+        '172.19.',   # Private Class B
+        '172.20.',   # Private Class B
+        '172.21.',   # Private Class B
+        '172.22.',   # Private Class B
+        '172.23.',   # Private Class B
+        '172.24.',   # Private Class B
+        '172.25.',   # Private Class B
+        '172.26.',   # Private Class B
+        '172.27.',   # Private Class B
+        '172.28.',   # Private Class B
+        '172.29.',   # Private Class B
+        '172.30.',   # Private Class B
+        '172.31.',   # Private Class B end
+        '192.168.',  # Private Class C
+        '169.254.',  # Link-local
+        '::1',       # IPv6 loopback
+        'localhost'
+    ]
+    
+    return any(ip.startswith(pattern) for pattern in private_patterns)
+
+
+def get_public_ip():
+    """Get the server's public IP address"""
+    try:
+        import requests
+        # Try multiple services for reliability
+        services = [
+            'https://api.ipify.org',
+            'https://icanhazip.com',
+            'https://ipecho.net/plain',
+            'https://checkip.amazonaws.com'
+        ]
+        
+        for service in services:
+            try:
+                response = requests.get(service, timeout=5)
+                if response.status_code == 200:
+                    ip = response.text.strip()
+                    if ip and not is_private_ip(ip):
+                        return ip
+            except:
+                continue
+                
+    except ImportError:
+        # requests not available, skip public IP detection
+        pass
+    except Exception:
+        pass
+    
+    return None
 
 
 def home(request):
@@ -253,14 +374,15 @@ def authenticate_face(request):
             
             logger.info("Face encoding extracted successfully")
             
-            # Compare with all registered users
+            # Compare with all registered users (skip test users to reduce noise)
             best_match = None
             best_confidence = 0.0
-            total_users = FaceUser.objects.filter(is_active=True).count()
+            real_users = FaceUser.objects.filter(is_active=True).exclude(username__startswith='testuser')
+            total_users = real_users.count()
             
-            logger.info(f"Comparing against {total_users} registered users")
+            logger.info(f"Comparing against {total_users} real users (excluding test users)")
             
-            for user in FaceUser.objects.filter(is_active=True):
+            for user in real_users:
                 try:
                     known_encoding = face_service.decode_face_data(user.face_encoding)
                     if known_encoding is not None:
@@ -270,9 +392,11 @@ def authenticate_face(request):
                         if confidence > best_confidence:
                             best_confidence = confidence
                             best_match = user
+                    else:
+                        logger.warning(f"User {user.username}: Could not decode face encoding")
                 except Exception as e:
                     logger.error(f"Error comparing with user {user.username}: {str(e)}")
-                    continue
+                    # Continue with next user instead of stopping
             
             logger.info(f"Best match: {best_match.username if best_match else 'None'}, confidence: {best_confidence:.3f}")
             
@@ -361,23 +485,39 @@ def recognition_logs(request):
     return render(request, 'logs.html', context)
 
 
-def get_client_ip(request):
-    """Get client IP address"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-
 def debug_page(request):
     """Debug page to check system status"""
     users = FaceUser.objects.all()
     
+    # Get IP detection information
+    client_ip = get_client_ip(request)
+    server_ip = get_server_ip()
+    public_ip = get_public_ip()
+    
+    # Get request headers related to IP
+    ip_headers = {
+        'REMOTE_ADDR': request.META.get('REMOTE_ADDR'),
+        'HTTP_X_FORWARDED_FOR': request.META.get('HTTP_X_FORWARDED_FOR'),
+        'HTTP_X_REAL_IP': request.META.get('HTTP_X_REAL_IP'),
+        'HTTP_CF_CONNECTING_IP': request.META.get('HTTP_CF_CONNECTING_IP'),
+        'HTTP_X_FORWARDED_PROTO': request.META.get('HTTP_X_FORWARDED_PROTO'),
+    }
+    
     context = {
         'users': users,
         'settings': settings,
+        'network_ip': server_ip,
+        'server_urls': {
+            'network': f'http://{server_ip}:8000',
+            'local': 'http://localhost:8000',
+        },
+        'ip_info': {
+            'detected_client_ip': client_ip,
+            'server_network_ip': server_ip,
+            'server_public_ip': public_ip,
+            'is_client_private': is_private_ip(client_ip),
+            'headers': ip_headers,
+        }
     }
     
     return render(request, 'debug.html', context)
@@ -411,3 +551,277 @@ def test_system(request):
             'success': False,
             'error': str(e)
         })
+
+
+# Super Admin Views
+@superadmin_required
+def superadmin_dashboard(request):
+    """Super Admin Dashboard"""
+    # Get system statistics
+    total_users = FaceUser.objects.count()
+    active_users = FaceUser.objects.filter(is_active=True).count()
+    superadmins = FaceUser.objects.filter(is_superadmin=True).count()
+    total_logins = RecognitionLog.objects.count()
+    recent_logins = RecognitionLog.objects.order_by('-detected_at')[:10]
+    
+    # Get user activity stats
+    from django.db.models import Count
+    
+    # Last 7 days activity
+    week_ago = timezone.now() - timedelta(days=7)
+    daily_stats = RecognitionLog.objects.filter(
+        detected_at__gte=week_ago
+    ).extra(
+        select={'day': 'date(detected_at)'}
+    ).values('day').annotate(
+        count=Count('id')
+    ).order_by('day')
+    
+    context = {
+        'user': request.face_user,
+        'stats': {
+            'total_users': total_users,
+            'active_users': active_users,
+            'inactive_users': total_users - active_users,
+            'superadmins': superadmins,
+            'total_logins': total_logins,
+            'recent_logins': recent_logins,
+            'daily_stats': list(daily_stats)
+        }
+    }
+    
+    return render(request, 'superadmin.html', context)
+
+
+@superadmin_required
+def manage_users(request):
+    """Manage Users with pagination, search, and filtering"""
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        user_id = request.POST.get('user_id')
+        
+        try:
+            user = FaceUser.objects.get(id=user_id)
+            
+            if action == 'toggle_active':
+                user.is_active = not user.is_active
+                user.save()
+                return JsonResponse({'success': True, 'message': f'User {"activated" if user.is_active else "deactivated"}'})
+            
+            elif action == 'toggle_superadmin':
+                user.is_superadmin = not user.is_superadmin
+                user.save()
+                return JsonResponse({'success': True, 'message': f'Super admin {"granted" if user.is_superadmin else "revoked"}'})
+            
+            elif action == 'delete_user':
+                username = user.username
+                user.delete()
+                return JsonResponse({'success': True, 'message': f'User {username} deleted'})
+            
+            elif action == 'bulk_activate':
+                user_ids = request.POST.getlist('user_ids')
+                FaceUser.objects.filter(id__in=user_ids).update(is_active=True)
+                return JsonResponse({'success': True, 'message': f'{len(user_ids)} users activated'})
+            
+            elif action == 'bulk_deactivate':
+                user_ids = request.POST.getlist('user_ids')
+                FaceUser.objects.filter(id__in=user_ids).update(is_active=False)
+                return JsonResponse({'success': True, 'message': f'{len(user_ids)} users deactivated'})
+            
+            elif action == 'bulk_delete':
+                user_ids = request.POST.getlist('user_ids')
+                # Don't delete current user
+                user_ids = [uid for uid in user_ids if int(uid) != request.face_user.id]
+                count = FaceUser.objects.filter(id__in=user_ids).count()
+                FaceUser.objects.filter(id__in=user_ids).delete()
+                return JsonResponse({'success': True, 'message': f'{count} users deleted'})
+                
+        except FaceUser.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User not found'})
+    
+    # Get filter parameters
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+    role_filter = request.GET.get('role', 'all')
+    sort_by = request.GET.get('sort', '-created_at')
+    
+    # Build query
+    users = FaceUser.objects.all()
+    
+    # Apply search filter
+    if search:
+        users = users.filter(
+            models.Q(username__icontains=search) | 
+            models.Q(email__icontains=search)
+        )
+    
+    # Apply status filter
+    if status_filter == 'active':
+        users = users.filter(is_active=True)
+    elif status_filter == 'inactive':
+        users = users.filter(is_active=False)
+    
+    # Apply role filter
+    if role_filter == 'superadmin':
+        users = users.filter(is_superadmin=True)
+    elif role_filter == 'regular':
+        users = users.filter(is_superadmin=False)
+    
+    # Apply sorting
+    valid_sorts = ['username', '-username', 'email', '-email', 'created_at', '-created_at', 'is_active', '-is_active']
+    if sort_by in valid_sorts:
+        users = users.order_by(sort_by)
+    else:
+        users = users.order_by('-created_at')
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(users, 25)  # Show 25 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get statistics
+    total_users = FaceUser.objects.count()
+    active_users = FaceUser.objects.filter(is_active=True).count()
+    superadmins = FaceUser.objects.filter(is_superadmin=True).count()
+    
+    context = {
+        'user': request.face_user,
+        'users': page_obj,
+        'search': search,
+        'status_filter': status_filter,
+        'role_filter': role_filter,
+        'sort_by': sort_by,
+        'stats': {
+            'total_users': total_users,
+            'active_users': active_users,
+            'inactive_users': total_users - active_users,
+            'superadmins': superadmins,
+            'filtered_count': paginator.count
+        }
+    }
+    
+    return render(request, 'manage_users.html', context)
+
+
+@superadmin_required
+def system_logs(request):
+    """System Logs"""
+    logs = RecognitionLog.objects.select_related('user').order_by('-detected_at')
+    
+    # Filter options
+    user_filter = request.GET.get('user')
+    date_filter = request.GET.get('date')
+    
+    if user_filter:
+        logs = logs.filter(user__username__icontains=user_filter)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            logs = logs.filter(detected_at__date=filter_date)
+        except ValueError:
+            pass
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)  # Show 50 logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'user': request.face_user,
+        'logs': page_obj,
+        'user_filter': user_filter,
+        'date_filter': date_filter,
+        'all_users': FaceUser.objects.all().order_by('username')
+    }
+    
+    return render(request, 'system_logs.html', context)
+    
+@superadmin_required
+def add_user_location(request):
+    """User IP Location - Show latest session per user only"""
+    
+    # Use the same IP detection method as logs for accuracy
+    detected_ip = get_client_ip(request)
+    
+    # Get latest log per user (one session per user)
+    users_latest_logs = []
+    for user in FaceUser.objects.all():
+        latest_log = RecognitionLog.objects.filter(user=user).order_by('-detected_at').first()
+        if latest_log:  # Only include users who have logged in
+            users_latest_logs.append(latest_log)
+    
+    # Sort by most recent first
+    users_latest_logs.sort(key=lambda x: x.detected_at, reverse=True)
+    
+    context = {
+        'user': request.face_user,
+        'detected_ip': detected_ip,
+        'users_latest_logs': users_latest_logs
+    }
+    
+    return render(request, 'add_user_location.html', context)
+
+
+@superadmin_required
+def redirect_to_server_location(request):
+    """Redirect old URL to new server location URL"""
+    return redirect('server_location')
+
+
+@superadmin_required
+def export_users(request):
+    """Export users to CSV"""
+    import csv
+    from django.http import HttpResponse
+    
+    # Get filter parameters (same as manage_users)
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+    role_filter = request.GET.get('role', 'all')
+    
+    # Build query (same logic as manage_users)
+    users = FaceUser.objects.all()
+    
+    if search:
+        users = users.filter(
+            models.Q(username__icontains=search) | 
+            models.Q(email__icontains=search)
+        )
+    
+    if status_filter == 'active':
+        users = users.filter(is_active=True)
+    elif status_filter == 'inactive':
+        users = users.filter(is_active=False)
+    
+    if role_filter == 'superadmin':
+        users = users.filter(is_superadmin=True)
+    elif role_filter == 'regular':
+        users = users.filter(is_superadmin=False)
+    
+    users = users.order_by('username')
+    
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="users_export.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Username', 'Email', 'Status', 'Role', 'Created Date', 'Last Login'])
+    
+    for user in users:
+        # Get last login
+        last_log = RecognitionLog.objects.filter(user=user).order_by('-detected_at').first()
+        last_login = last_log.detected_at.strftime('%Y-%m-%d %H:%M:%S') if last_log else 'Never'
+        
+        writer.writerow([
+            user.username,
+            user.email,
+            'Active' if user.is_active else 'Inactive',
+            'Super Admin' if user.is_superadmin else 'Regular User',
+            user.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            last_login
+        ])
+    
+    return response

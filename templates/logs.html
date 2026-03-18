@@ -238,6 +238,21 @@
         font-size: 13px;
     }
     
+    .log-ip a {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    
+    .log-ip a:hover {
+        background: rgba(0, 255, 136, 0.1);
+        color: #00ff88 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2);
+    }
+    
     .status-badge {
         padding: 4px 12px;
         border-radius: 8px;
@@ -389,14 +404,26 @@
         <div class="mac-content">
             <!-- Header -->
             <div class="logs-header">
-                <h1 class="logs-title">
-                    <i class="fas fa-history" style="color: #30d158;"></i>
-                    Authentication Records
-                </h1>
-                <a href="{% url 'dashboard' %}" class="mac-button secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to Dashboard
-                </a>
+                <div>
+                    <h1 class="logs-title">
+                        <i class="fas fa-history" style="color: #30d158;"></i>
+                        Authentication Records
+                    </h1>
+                    <div style="font-size: 14px; color: rgba(255, 255, 255, 0.6); margin-top: 8px;">
+                        <i class="fas fa-clock"></i>
+                        Current time: <span id="currentTime"></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button onclick="location.reload()" class="mac-button secondary">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="mac-button secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Dashboard
+                    </a>
+                </div>
             </div>
             
             {% if logs %}
@@ -448,17 +475,47 @@
                                 <td class="log-index">{{ forloop.counter }}</td>
                                 <td>
                                     <div class="log-date">{{ log.detected_at|date:"M d, Y" }}</div>
-                                    <div class="log-time">{{ log.detected_at|time:"H:i:s" }}</div>
+                                    <div class="log-time">{{ log.detected_at|time:"g:i A" }}</div>
+                                    <div class="log-time" style="font-size: 10px; opacity: 0.6;">
+                                        {{ log.detected_at|timesince }} ago
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="confidence-bar-container">
                                         <div class="confidence-bar {% if log.confidence >= 0.6 %}confidence-high{% elif log.confidence >= 0.5 %}confidence-medium{% else %}confidence-low{% endif %}" 
-                                             style="width: {{ log.confidence|floatformat:0|add:'0' }}%">
+                                             data-confidence="{{ log.confidence }}"
+                                             style="width: 0%">
                                             {{ log.confidence|floatformat:3 }}
                                         </div>
                                     </div>
                                 </td>
-                                <td class="log-ip">{{ log.ip_address|default:"Unknown" }}</td>
+                                <td class="log-ip">
+                                    {% if log.ip_address and log.ip_address != "Unknown" %}
+                                        <div class="d-flex align-items-center">
+                                            <!-- IP Type Indicator -->
+                                            {% if log.ip_address == "127.0.0.1" %}
+                                                <span class="badge bg-secondary me-2" style="font-size: 8px;">LOCAL</span>
+                                            {% elif log.ip_address|slice:":7" == "192.168" or log.ip_address|slice:":3" == "10." or log.ip_address|slice:":7" == "172.16" %}
+                                                <span class="badge bg-warning me-2" style="font-size: 8px;">LAN</span>
+                                            {% else %}
+                                                <span class="badge bg-success me-2" style="font-size: 8px;">WAN</span>
+                                            {% endif %}
+                                            
+                                            <a href="https://whatismyipaddress.com/ip/{{ log.ip_address }}" 
+                                               target="_blank" 
+                                               class="text-decoration-none"
+                                               style="color: rgba(255, 255, 255, 0.8); transition: color 0.3s ease;"
+                                               onmouseover="this.style.color='#00ff88'"
+                                               onmouseout="this.style.color='rgba(255, 255, 255, 0.8)'"
+                                               title="View IP information on whatismyipaddress.com">
+                                                {{ log.ip_address }}
+                                                <i class="fas fa-external-link-alt ms-1" style="font-size: 10px; opacity: 0.7;"></i>
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <span style="color: rgba(255, 255, 255, 0.5);">Unknown</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if log.confidence >= 0.6 %}
                                         <span class="status-badge status-success">
@@ -495,4 +552,39 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set confidence bar widths
+    const confidenceBars = document.querySelectorAll('.confidence-bar[data-confidence]');
+    confidenceBars.forEach(bar => {
+        const confidence = parseFloat(bar.getAttribute('data-confidence'));
+        const percentage = Math.round(confidence * 100);
+        bar.style.width = percentage + '%';
+    });
+    
+    // Update current time
+    function updateCurrentTime() {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'Asia/Manila'
+        };
+        const timeString = now.toLocaleDateString('en-US', options);
+        document.getElementById('currentTime').textContent = timeString;
+    }
+    
+    // Update time immediately and then every second
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+});
+</script>
 {% endblock %}

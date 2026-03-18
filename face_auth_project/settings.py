@@ -1,6 +1,19 @@
 import os
+import socket
 from pathlib import Path
 from decouple import config
+
+def get_network_ip():
+    """Get the server's network IP address"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+
+# Get the current network IP
+NETWORK_IP = get_network_ip()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -8,7 +21,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-producti
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Manila'  # Philippines timezone
 USE_I18N = True
 USE_TZ = True
 
@@ -115,6 +128,10 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 FACE_CONFIDENCE_THRESHOLD = 0.6  # Lowered for easier authentication
 FACE_CAPTURE_FRAMES = 25
 LIVENESS_DETECTION = False  # Temporarily disabled for testing
+
+# IP Address Detection Settings
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Logging Configuration
 LOGGING = {

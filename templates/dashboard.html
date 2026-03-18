@@ -533,6 +533,12 @@
                             <i class="fas fa-history"></i> Login History
                         </a>
                         
+                        {% if user.is_superadmin %}
+                        <a href="{% url 'superadmin' %}" class="mac-button" style="background: linear-gradient(135deg, #ffd60a 0%, #ffcc02 100%); color: #000000;">
+                            <i class="fas fa-crown"></i> Super Admin
+                        </a>
+                        {% endif %}
+                        
                         <button class="mac-button secondary" onclick="updateFace()">
                             <i class="fas fa-sync-alt"></i> Update Face ID
                         </button>

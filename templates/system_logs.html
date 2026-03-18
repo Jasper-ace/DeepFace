@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}System Logs - Super Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #000000 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    .admin-container {
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 100%);
+    }
+    
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .admin-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .filters-container {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+    }
+    
+    .filters-row {
+        display: flex;
+        gap: 20px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        flex: 1;
+    }
+    
+    .filter-label {
+        display: block;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    
+    .filter-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #ffffff;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .filter-input:focus {
+        outline: none;
+        border-color: #00ff88;
+        box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
+    }
+    
+    .logs-table-container {
+        background: rgba(20, 20, 22, 0.6);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        backdrop-filter: blur(20px);
+        margin-bottom: 20px;
+    }
+    
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #ffffff;
+    }
+    
+    .logs-table thead {
+        background: rgba(30, 30, 32, 0.8);
+    }
+    
+    .logs-table th {
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 600;
+        color: #00ff88;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        letter-spacing: 0.3px;
+    }
+    
+    .logs-table td {
+        padding: 16px 20px;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+    }
+    
+    .logs-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .confidence-bar-container {
+        width: 100px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .confidence-bar {
+        height: 100%;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 600;
+        transition: width 0.3s ease;
+    }
+    
+    .confidence-high {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        color: #000;
+    }
+    
+    .confidence-medium {
+        background: linear-gradient(135deg, #ffd60a 0%, #ffcc02 100%);
+        color: #000;
+    }
+    
+    .confidence-low {
+        background: linear-gradient(135deg, #ff453a 0%, #ff2d20 100%);
+        color: #fff;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .pagination a, .pagination span {
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .pagination a {
+        background: rgba(72, 72, 74, 0.8);
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+    
+    .pagination a:hover {
+        background: rgba(72, 72, 74, 1);
+        transform: translateY(-1px);
+    }
+    
+    .pagination .current {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        color: #000000;
+    }
+    
+    .admin-btn {
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border: none;
+        border-radius: 8px;
+        color: #000000;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 16px rgba(0, 255, 136, 0.2);
+    }
+    
+    .admin-btn:hover {
+        background: linear-gradient(135deg, #00ff88 0%, #00aa55 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 255, 136, 0.3);
+        color: #000000;
+        text-decoration: none;
+    }
+    
+    .admin-btn.secondary {
+        background: linear-gradient(135deg, rgba(72, 72, 74, 0.8) 0%, rgba(60, 60, 62, 0.8) 100%);
+        color: #ffffff;
+    }
+    
+    .admin-btn.secondary:hover {
+        background: linear-gradient(135deg, rgba(72, 72, 74, 1) 0%, rgba(60, 60, 62, 1) 100%);
+        color: #ffffff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="admin-title">
+            <i class="fas fa-clipboard-list" style="color: #00ff88;"></i>
+            System Logs
+        </h1>
+        <div>
+            <a href="{% url 'superadmin' %}" class="admin-btn secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Admin
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-container">
+        <form method="get" class="filters-row">
+            <div class="filter-group">
+                <label class="filter-label">Filter by User</label>
+                <input type="text" name="user" class="filter-input" 
+                       placeholder="Enter username..." value="{{ user_filter }}">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Filter by Date</label>
+                <input type="date" name="date" class="filter-input" value="{{ date_filter }}">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="admin-btn">
+                    <i class="fas fa-search"></i>
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Logs Table -->
+    <div class="logs-table-container">
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Date & Time</th>
+                    <th>Confidence</th>
+                    <th>IP Address</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: #ffffff;">{{ log.user.username }}</div>
+                        <small style="color: rgba(255, 255, 255, 0.6);">{{ log.user.email }}</small>
+                    </td>
+                    <td>
+                        <div style="color: #ffffff;">{{ log.detected_at|date:"M d, Y" }}</div>
+                        <div style="color: rgba(255, 255, 255, 0.6); font-size: 12px;">{{ log.detected_at|time:"g:i A" }}</div>
+                        <div style="color: rgba(255, 255, 255, 0.4); font-size: 10px;">{{ log.detected_at|timesince }} ago</div>
+                    </td>
+                    <td>
+                        <div class="confidence-bar-container">
+                            <div class="confidence-bar {% if log.confidence >= 0.6 %}confidence-high{% elif log.confidence >= 0.5 %}confidence-medium{% else %}confidence-low{% endif %}" 
+                                 data-confidence="{{ log.confidence }}" style="width: 0%">
+                                {{ log.confidence|floatformat:3 }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <!-- IP Type Indicator -->
+                            {% if log.ip_address == "127.0.0.1" %}
+                                <span style="background: rgba(108, 117, 125, 0.8); color: #ffffff; padding: 2px 6px; border-radius: 4px; font-size: 10px;">LOCAL</span>
+                            {% elif log.ip_address|slice:":7" == "192.168" or log.ip_address|slice:":3" == "10." %}
+                                <span style="background: rgba(255, 193, 7, 0.8); color: #000000; padding: 2px 6px; border-radius: 4px; font-size: 10px;">LAN</span>
+                            {% else %}
+                                <span style="background: rgba(40, 167, 69, 0.8); color: #ffffff; padding: 2px 6px; border-radius: 4px; font-size: 10px;">WAN</span>
+                            {% endif %}
+                            
+                            {% if log.ip_address and log.ip_address != "Unknown" %}
+                                <a href="https://whatismyipaddress.com/ip/{{ log.ip_address }}" 
+                                   target="_blank" 
+                                   style="color: rgba(255, 255, 255, 0.8); text-decoration: none; font-family: monospace;">
+                                    {{ log.ip_address }}
+                                </a>
+                            {% else %}
+                                <span style="color: rgba(255, 255, 255, 0.5);">Unknown</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if log.confidence >= 0.6 %}
+                            <span style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000000; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                                <i class="fas fa-check"></i> Success
+                            </span>
+                        {% else %}
+                            <span style="background: linear-gradient(135deg, #ff453a 0%, #ff2d20 100%); color: #ffffff; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                                <i class="fas fa-times"></i> Failed
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 40px;">
+                        No logs found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if logs.has_other_pages %}
+    <div class="pagination">
+        {% if logs.has_previous %}
+            <a href="?page=1{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&laquo; First</a>
+            <a href="?page={{ logs.previous_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">Previous</a>
+        {% endif %}
+        
+        <span class="current">
+            Page {{ logs.number }} of {{ logs.paginator.num_pages }}
+        </span>
+        
+        {% if logs.has_next %}
+            <a href="?page={{ logs.next_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">Next</a>
+            <a href="?page={{ logs.paginator.num_pages }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set confidence bar widths
+    const confidenceBars = document.querySelectorAll('.confidence-bar[data-confidence]');
+    confidenceBars.forEach(bar => {
+        const confidence = parseFloat(bar.getAttribute('data-confidence'));
+        const percentage = Math.round(confidence * 100);
+        bar.style.width = percentage + '%';
+    });
+});
+</script>
+{% endblock %}
