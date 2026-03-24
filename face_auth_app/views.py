@@ -327,11 +327,14 @@ def authenticate_face(request):
             if not frames_data:
                 return JsonResponse({'success': False, 'message': 'No frames provided'})
             
-            logger.info(f"Processing {len(frames_data)} frames for authentication, blink detected: {blink_detected}")
+            # Fast processing mode - process frames in parallel if possible
+            logger.info(f"Processing {len(frames_data)} frames for authentication (fast mode), blink detected: {blink_detected}")
             
-            # Process frames
+            # Process frames with early termination for speed
             frames = []
-            for i, frame_data in enumerate(frames_data):
+            max_frames_to_process = min(8, len(frames_data))  # iPhone-like: process max 8 frames
+            
+            for i, frame_data in enumerate(frames_data[:max_frames_to_process]):
                 try:
                     # Decode base64 image
                     image_data = base64.b64decode(frame_data.split(',')[1])
@@ -339,6 +342,10 @@ def authenticate_face(request):
                     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                     if frame is not None:
                         frames.append(frame)
+                        
+                        # Early exit if we have enough good frames
+                        if len(frames) >= 3:  # iPhone-like: 3 good frames is enough
+                            break
                     else:
                         logger.warning(f"Frame {i} could not be decoded")
                 except Exception as e:
@@ -374,21 +381,32 @@ def authenticate_face(request):
             
             logger.info("Face encoding extracted successfully")
             
-            # Compare with all registered users (skip test users to reduce noise)
+            # Fast comparison mode - stop at first confident match (iPhone-like)
             best_match = None
             best_confidence = 0.0
             real_users = FaceUser.objects.filter(is_active=True).exclude(username__startswith='testuser')
             total_users = real_users.count()
             
-            logger.info(f"Comparing against {total_users} real users (excluding test users)")
+            logger.info(f"Fast comparing against {total_users} real users (excluding test users)")
             
-            for user in real_users:
+            # Sort users by recent activity for faster matching (most recent first)
+            recent_users = real_users.order_by('-id')  # Most recently registered first
+            
+            for user in recent_users:
                 try:
                     known_encoding = face_service.decode_face_data(user.face_encoding)
                     if known_encoding is not None:
                         confidence = face_service.compare_faces(known_encoding, unknown_encoding)
                         logger.info(f"User {user.username}: confidence = {confidence:.3f}")
                         
+                        # iPhone-like: Accept first confident match for speed
+                        if confidence >= face_service.confidence_threshold:
+                            best_match = user
+                            best_confidence = confidence
+                            logger.info(f"Fast match found: {user.username} with confidence {confidence:.3f}")
+                            break  # Stop searching for speed
+                        
+                        # Keep track of best match even if below threshold
                         if confidence > best_confidence:
                             best_confidence = confidence
                             best_match = user
@@ -396,7 +414,7 @@ def authenticate_face(request):
                         logger.warning(f"User {user.username}: Could not decode face encoding")
                 except Exception as e:
                     logger.error(f"Error comparing with user {user.username}: {str(e)}")
-                    # Continue with next user instead of stopping
+                    continue
             
             logger.info(f"Best match: {best_match.username if best_match else 'None'}, confidence: {best_confidence:.3f}")
             

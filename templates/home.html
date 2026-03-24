@@ -63,11 +63,13 @@
         <div class="mt-5">
             <div class="row justify-content-center">
                 <div class="col-md-5 mb-4">
-                    <div class="card" style="background: rgba(15, 15, 15, 0.8); border: 1px solid rgba(0, 255, 136, 0.2);">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-user-plus fa-3x mb-3" style="color: #00ff88;"></i>
-                            <h5 class="instruction-text" style="font-size: 18px; margin-bottom: 15px;">Set Up Face ID</h5>
-                            <p class="status-text" style="font-size: 14px; margin-bottom: 20px;">Register your face for secure authentication</p>
+                    <div class="card h-100" style="background: rgba(15, 15, 15, 0.8); border: 1px solid rgba(0, 255, 136, 0.2); min-height: 280px;">
+                        <div class="card-body text-center p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <i class="fas fa-user-plus fa-3x mb-3" style="color: #00ff88;"></i>
+                                <h5 class="instruction-text" style="font-size: 18px; margin-bottom: 15px;">Set Up Face ID</h5>
+                                <p class="status-text" style="font-size: 14px; margin-bottom: 20px;">Register your face for secure authentication</p>
+                            </div>
                             <a href="{% url 'register' %}" class="btn btn-faceid">
                                 <i class="fas fa-user-plus"></i> Get Started
                             </a>
@@ -76,11 +78,13 @@
                 </div>
                 
                 <div class="col-md-5 mb-4">
-                    <div class="card" style="background: rgba(15, 15, 15, 0.8); border: 1px solid rgba(0, 255, 136, 0.2);">
-                        <div class="card-body text-center p-4">
-                            <i class="fas fa-unlock-alt fa-3x mb-3" style="color: #00ff88;"></i>
-                            <h5 class="instruction-text" style="font-size: 18px; margin-bottom: 15px;">Sign In</h5>
-                            <p class="status-text" style="font-size: 14px; margin-bottom: 20px;">Authenticate instantly with Face ID</p>
+                    <div class="card h-100" style="background: rgba(15, 15, 15, 0.8); border: 1px solid rgba(0, 255, 136, 0.2); min-height: 280px;">
+                        <div class="card-body text-center p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <i class="fas fa-unlock-alt fa-3x mb-3" style="color: #00ff88;"></i>
+                                <h5 class="instruction-text" style="font-size: 18px; margin-bottom: 15px;">Sign In</h5>
+                                <p class="status-text" style="font-size: 14px; margin-bottom: 20px;">Authenticate instantly with Face ID</p>
+                            </div>
                             <a href="{% url 'login' %}" class="btn btn-faceid">
                                 <i class="fas fa-unlock-alt"></i> Sign In
                             </a>

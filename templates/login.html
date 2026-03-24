@@ -110,7 +110,7 @@ class AppleFaceIDAuthentication {
         this.capturedFrames = [];
         this.isCapturing = false;
         this.captureCount = 0;
-        this.maxFrames = 15; // Fewer frames for authentication
+        this.maxFrames = 8; // Reduced frames for iPhone-like speed
         this.cameraFlipped = true;
         this.blinkDetected = false;
         this.lastBlinkTime = 0;
@@ -201,7 +201,7 @@ class AppleFaceIDAuthentication {
             this.updateProgress(progress);
             this.simulateBlinkDetection();
             
-        }, 300); // Slightly slower for authentication
+        }, 150); // Faster capture interval for iPhone-like speed
     }
     
     updateProgress(progress) {

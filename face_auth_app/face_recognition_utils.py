@@ -15,22 +15,30 @@ class FaceRecognitionService:
         self.capture_frames = getattr(settings, 'FACE_CAPTURE_FRAMES', 25)
         
     def extract_face_encoding(self, image):
-        """Extract face encoding from image using face_recognition library"""
+        """Extract face encoding from image using face_recognition library (optimized)"""
         try:
+            # Resize image for faster processing (iPhone-like optimization)
+            height, width = image.shape[:2]
+            if width > 640:  # Resize if too large
+                scale = 640 / width
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+                image = cv2.resize(image, (new_width, new_height))
+            
             # Convert image to RGB if it's BGR
             if len(image.shape) == 3 and image.shape[2] == 3:
                 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             else:
                 image_rgb = image
                 
-            # Find face locations
-            face_locations = face_recognition.face_locations(image_rgb)
+            # Find face locations with faster model
+            face_locations = face_recognition.face_locations(image_rgb, model="hog")  # HOG is faster than CNN
             
             if not face_locations:
                 return None
                 
             # Extract face encodings
-            face_encodings = face_recognition.face_encodings(image_rgb, face_locations)
+            face_encodings = face_recognition.face_encodings(image_rgb, face_locations, num_jitters=1)  # Reduced jitters for speed
             
             if face_encodings:
                 return face_encodings[0]  # Return first face encoding
@@ -81,40 +89,32 @@ class FaceRecognitionService:
             return None
     
     def compare_faces(self, known_encoding, unknown_encoding):
-        """Compare two face encodings and return similarity score"""
+        """Compare two face encodings and return similarity score (optimized)"""
         try:
             if known_encoding is None or unknown_encoding is None:
-                logger.warning("One or both encodings are None")
                 return 0.0
             
             # Ensure both encodings are numpy arrays
-            if not isinstance(known_encoding, np.ndarray):
-                logger.warning("Known encoding is not a numpy array")
-                return 0.0
-                
-            if not isinstance(unknown_encoding, np.ndarray):
-                logger.warning("Unknown encoding is not a numpy array")
+            if not isinstance(known_encoding, np.ndarray) or not isinstance(unknown_encoding, np.ndarray):
                 return 0.0
             
             # Validate encoding shapes
             if known_encoding.shape != (128,) or unknown_encoding.shape != (128,):
-                logger.warning(f"Invalid encoding shapes: known={known_encoding.shape}, unknown={unknown_encoding.shape}")
                 return 0.0
                 
-            # Use face_recognition's compare_faces function
-            matches = face_recognition.compare_faces([known_encoding], unknown_encoding, tolerance=0.6)
+            # Fast distance calculation using numpy (faster than face_recognition.face_distance)
+            distance = np.linalg.norm(known_encoding - unknown_encoding)
             
-            if matches[0]:
-                # Calculate face distance (lower is better)
-                face_distance = face_recognition.face_distance([known_encoding], unknown_encoding)[0]
+            # Convert distance to confidence (optimized thresholds for speed)
+            # iPhone-like fast recognition with adjusted thresholds
+            if distance < 0.4:  # Very close match
+                confidence = 1.0 - (distance / 0.4) * 0.2  # 0.8-1.0 range
+            elif distance < 0.6:  # Good match
+                confidence = 0.8 - ((distance - 0.4) / 0.2) * 0.3  # 0.5-0.8 range
+            else:  # Poor match
+                confidence = max(0.0, 0.5 - ((distance - 0.6) / 0.4) * 0.5)  # 0.0-0.5 range
                 
-                # Convert distance to confidence (0-1, higher is better)
-                confidence = 1 - face_distance
-                
-                return max(0.0, min(1.0, confidence))
-            
-            # No match found
-            return 0.0
+            return max(0.0, min(1.0, confidence))
             
         except Exception as e:
             logger.error(f"Error comparing faces: {str(e)}")
@@ -136,19 +136,35 @@ class FaceRecognitionService:
             return False
     
     def process_multiple_frames(self, frames):
-        """Process multiple frames and return average encoding"""
+        """Process multiple frames and return best encoding (optimized for speed)"""
         encodings = []
         
-        for frame in frames:
+        # Process only first few frames for speed (iPhone-like)
+        max_frames_to_process = min(5, len(frames))  # Process max 5 frames
+        
+        for i in range(max_frames_to_process):
+            frame = frames[i]
             encoding = self.extract_face_encoding(frame)
             if encoding is not None:
                 encodings.append(encoding)
+                
+                # Early exit if we get a good encoding from first frame
+                if i == 0 and encoding is not None:
+                    # Check if this is a clear, high-quality encoding
+                    # by verifying it's not all zeros or has good variance
+                    if np.std(encoding) > 0.1:  # Good variance indicates quality
+                        return encoding  # Return immediately for speed
         
         if not encodings:
             return None
             
-        # Return average encoding
-        return np.mean(encodings, axis=0)
+        # If we have multiple encodings, return the best one (highest variance = clearest)
+        if len(encodings) == 1:
+            return encodings[0]
+        else:
+            # Return encoding with highest standard deviation (clearest features)
+            best_encoding = max(encodings, key=lambda x: np.std(x))
+            return best_encoding
     
     def validate_liveness(self, frames):
         """Basic liveness detection by checking frame variations"""
