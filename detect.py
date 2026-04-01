@@ -14,9 +14,10 @@ class EmotionDetector:
         self.model_path = model_path
         self.debug_mode = debug_mode
         
-        # Class names (check if these match your training data structure)
-        # If predictions are inverted, try swapping these:
-        self.class_names = ['sad', 'happy']  # Swapped order to fix inversion
+        # Class names - CORRECTED based on your dataset structure
+        # Your training data: Datasets/train/happy and Datasets/train/sad
+        # ImageFolder sorts alphabetically: ['happy', 'sad'] -> [0, 1]
+        self.class_names = ['happy', 'sad']  # Correct order: 0=happy, 1=sad
         self.num_classes = len(self.class_names)
         
         # Load the model
@@ -36,8 +37,9 @@ class EmotionDetector:
         
         # Colors for visualization
         self.colors = {
-            'happy': (0, 255, 0),    # Green
-            'sad': (0, 0, 255),      # Red
+            'happy': (0, 255, 0),      # Green
+            'sad': (0, 0, 255),        # Red
+            'uncertain': (0, 255, 255), # Yellow
             'unknown': (128, 128, 128)  # Gray
         }
         
@@ -86,7 +88,7 @@ class EmotionDetector:
     
     def predict_emotion(self, face_image):
         """
-        Predict emotion from a face image
+        Predict emotion from a face image with improved logic
         """
         try:
             # Preprocess the image
@@ -96,19 +98,42 @@ class EmotionDetector:
             with torch.no_grad():
                 outputs = self.model(input_tensor)
                 probabilities = torch.nn.functional.softmax(outputs, dim=1)
-                confidence, predicted = torch.max(probabilities, 1)
                 
-                emotion = self.class_names[predicted.item()]
-                confidence_score = confidence.item()
+                # Get probabilities for both classes
+                # CORRECTED: index 0 = happy, index 1 = sad (alphabetical order)
+                happy_prob = probabilities[0][0].item()
+                sad_prob = probabilities[0][1].item()
                 
                 # Debug mode: print all probabilities
                 if self.debug_mode:
                     print(f"🐛 Raw outputs: {outputs.cpu().numpy()}")
-                    print(f"🐛 Probabilities: {probabilities.cpu().numpy()}")
-                    print(f"🐛 Predicted class index: {predicted.item()}")
-                    print(f"🐛 Class mapping: {dict(enumerate(self.class_names))}")
-                    for i, (class_name, prob) in enumerate(zip(self.class_names, probabilities[0])):
-                        print(f"🐛 {class_name}: {prob.item():.3f}")
+                    print(f"🐛 Probabilities: sad={sad_prob:.3f}, happy={happy_prob:.3f}")
+                
+                # Determine emotion with confidence threshold
+                confidence_threshold = 0.6  # Require at least 60% confidence
+                
+                if happy_prob > sad_prob:
+                    if happy_prob > confidence_threshold:
+                        emotion = "happy"
+                        confidence_score = happy_prob
+                    else:
+                        emotion = "uncertain"
+                        confidence_score = happy_prob
+                else:
+                    if sad_prob > confidence_threshold:
+                        emotion = "sad"
+                        confidence_score = sad_prob
+                    else:
+                        emotion = "uncertain"
+                        confidence_score = sad_prob
+                
+                # If the difference is too small, mark as uncertain
+                if abs(happy_prob - sad_prob) < 0.2:  # Less than 20% difference
+                    emotion = "uncertain"
+                    confidence_score = max(happy_prob, sad_prob)
+                
+                if self.debug_mode:
+                    print(f"🐛 Final prediction: {emotion} ({confidence_score:.3f})")
                 
                 return emotion, confidence_score
                 
@@ -161,6 +186,8 @@ class EmotionDetector:
                     cv2.putText(frame, "😊", (x + w - 30, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
                 elif emotion == 'sad':
                     cv2.putText(frame, "😢", (x + w - 30, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                elif emotion == 'uncertain':
+                    cv2.putText(frame, "🤔", (x + w - 30, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         
         return frame
     
